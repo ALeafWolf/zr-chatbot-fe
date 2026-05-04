@@ -15,6 +15,22 @@ export const ChatModeSchema = z.enum([
 ]);
 export type ChatMode = z.infer<typeof ChatModeSchema>;
 
+/** Main-world continuity scopes — must match backend `AVAILABLE_SCOPES`. */
+export const ContinuityScopeSchema = z.enum([
+  "main_pre_relationship",
+  "main_situationship",
+  "main_relationship",
+  "main_engaged",
+  "main_married",
+]);
+export type ContinuityScope = z.infer<typeof ContinuityScopeSchema>;
+
+/** Legacy persisted sessions may still use the old key; display-only support. */
+export const ContinuityScopeStoredSchema = z.union([
+  ContinuityScopeSchema,
+  z.literal("main_sweet"),
+]);
+
 export const CharacterSchema = z.object({
   character_id: z.string(),
   name: z.string(),
@@ -22,7 +38,7 @@ export const CharacterSchema = z.object({
 export type Character = z.infer<typeof CharacterSchema>;
 
 export const ScopeSchema = z.object({
-  scope: z.string(),
+  scope: ContinuityScopeSchema,
 });
 export type Scope = z.infer<typeof ScopeSchema>;
 
@@ -30,7 +46,7 @@ export const SessionSummarySchema = z.object({
   session_id: z.string(),
   character_id: z.string(),
   mode: ChatModeSchema,
-  continuity_scope: z.string(),
+  continuity_scope: ContinuityScopeStoredSchema,
   session_summary: z.string().nullable().optional(),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   updated_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
@@ -50,7 +66,7 @@ export const SessionDetailSchema = z.object({
   session_id: z.string(),
   character_id: z.string(),
   mode: ChatModeSchema,
-  continuity_scope: z.string(),
+  continuity_scope: ContinuityScopeStoredSchema,
   pinned_time: z.string().nullable().optional(),
   pinned_location: z.string().nullable().optional(),
   session_summary: z.string().nullable().optional(),
@@ -79,7 +95,7 @@ export type CreateSessionResponse = z.infer<typeof CreateSessionResponseSchema>;
 export interface CreateSessionInput {
   character_id: string;
   mode: ChatMode;
-  continuity_scope: string;
+  continuity_scope: ContinuityScope;
   pinned_time?: string;
   pinned_location?: string;
 }

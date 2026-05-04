@@ -4,7 +4,7 @@ import { Loader2, X } from "lucide-react";
 import { useCharacters, useCreateSession } from "../hooks/useSessions";
 import ScopePicker from "./ScopePicker";
 import ModePicker from "./ModePicker";
-import type { ChatMode } from "../api/client";
+import type { ChatMode, ContinuityScope } from "../api/client";
 
 interface Props {
   open: boolean;
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const DEFAULT_CHARACTER = "zou_ran";
-const DEFAULT_SCOPE = "main_sweet";
+const DEFAULT_SCOPE: ContinuityScope = "main_married";
 const DEFAULT_MODE: ChatMode = "canonical_live";
 
 export default function NewSessionDialog({ open, onClose }: Props) {
@@ -21,7 +21,7 @@ export default function NewSessionDialog({ open, onClose }: Props) {
   const create = useCreateSession();
 
   const [characterId, setCharacterId] = useState(DEFAULT_CHARACTER);
-  const [scope, setScope] = useState(DEFAULT_SCOPE);
+  const [scope, setScope] = useState<ContinuityScope>(DEFAULT_SCOPE);
   const [mode, setMode] = useState<ChatMode>(DEFAULT_MODE);
   const [pinnedTime, setPinnedTime] = useState("");
   const [pinnedLocation, setPinnedLocation] = useState("");
@@ -89,7 +89,7 @@ export default function NewSessionDialog({ open, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-overlay p-0 sm:items-center sm:p-6 animate-fade-in"
+      className="fixed inset-0 z-60 flex items-end justify-center bg-overlay p-0 sm:items-center sm:p-6 animate-fade-in"
     >
       <button
         type="button"

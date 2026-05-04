@@ -15,11 +15,11 @@ export const MODE_DESCRIPTIONS: Record<ChatMode, string> = {
 };
 
 const SCOPE_LABELS: Record<string, string> = {
-  main_pre_relationship: "Main · pre-relationship (未名篇)",
-  main_situationship: "Main · situationship (未名 + 旖慕)",
-  main_sweet: "Main · sweet (+ 甜蜜篇)",
-  main_engaged: "Main · engaged (+ 相守篇)",
-  main_married: "Main · married (+ 挚爱篇)",
+  main_pre_relationship: "未名篇",
+  main_situationship: "+ 旖慕篇",
+  main_relationship: "+ 甜蜜篇",
+  main_engaged: "+ 相守篇",
+  main_married: "+ 挚爱篇",
 };
 
 export function scopeLabel(scope: string): string {

@@ -8,13 +8,11 @@ export default function EmptyState() {
           <MessageSquarePlus size={28} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight">
-          Start a conversation with 左然
+          左然正在等待你
         </h1>
         <p className="mt-2 text-sm text-fg-muted">
-          Pick a continuity scope and a mode in the sidebar to begin. The Phase 1
-          default is the <span className="font-medium text-fg">main_sweet</span>{" "}
-          scope in <span className="font-medium text-fg">canonical_live</span>{" "}
-          mode.
+          默认篇章：<span className="font-medium text-fg">挚爱篇</span><br/>
+          默认模式:<span className="font-medium text-fg">canonical_live</span>
         </p>
       </div>
     </div>
