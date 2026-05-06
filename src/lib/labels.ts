@@ -27,12 +27,23 @@ export function scopeLabel(scope: string): string {
 }
 
 const CHARACTER_LABELS: Record<string, string> = {
-  zou_ran: "左然 (Zou Ran)",
+  zou_ran: "左然",
 };
 
 export function characterLabel(characterId: string, fallback?: string): string {
   return CHARACTER_LABELS[characterId] ?? fallback ?? characterId;
 }
+
+/** Stage chips for persisted/streamed thought chains — matches backend `ThoughtKind`. */
+export const THOUGHT_KIND_LABELS: Record<string, string> = {
+  recall: "回忆",
+  tool_decision: "查找",
+  tool_result: "收到",
+  drafting: "起草",
+  rewrite: "重整",
+  deflect: "转移话题",
+  native: "思考",
+};
 
 const RELATIVE_FORMATTER = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 

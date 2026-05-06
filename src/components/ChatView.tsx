@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
-import TypingIndicator from "./TypingIndicator";
+import StreamingAssistantBubble from "./StreamingAssistantBubble";
 import { useSession } from "../hooks/useSessions";
-import { useSendMessage } from "../hooks/useChat";
+import { useStreamMessage } from "../hooks/useStreamMessage";
 import {
   characterLabel,
   MODE_LABELS,
@@ -17,17 +17,21 @@ interface Props {
 
 export default function ChatView({ sessionId }: Props) {
   const session = useSession(sessionId);
-  const sendMessage = useSendMessage();
+  const stream = useStreamMessage();
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const messagesLength = session.data?.messages.length ?? 0;
 
-  // Auto-scroll on new messages or typing-indicator state change.
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messagesLength, sendMessage.isPending]);
+  }, [
+    messagesLength,
+    stream.isPending,
+    stream.streamState.partialContent,
+    stream.streamState.thoughts.length,
+  ]);
 
   if (session.isLoading) {
     return (
@@ -50,11 +54,10 @@ export default function ChatView({ sessionId }: Props) {
   if (!session.data) return null;
 
   const characterName = characterLabel(session.data.character_id);
-  const isPending = sendMessage.isPending;
+  const isPending = stream.isPending;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Header */}
       <header className="border-b border-border bg-surface/70 px-4 py-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
           <div className="min-w-0">
@@ -83,7 +86,6 @@ export default function ChatView({ sessionId }: Props) {
         </div>
       </header>
 
-      {/* Scrollable transcript */}
       <div
         ref={scrollerRef}
         className="min-h-0 flex-1 overflow-y-auto scrollbar-thin px-3 py-6 sm:px-6"
@@ -104,21 +106,27 @@ export default function ChatView({ sessionId }: Props) {
             />
           ))}
 
-          {isPending && <TypingIndicator characterName={characterName} />}
+          {isPending && (
+            <StreamingAssistantBubble
+              characterName={characterName}
+              thoughts={stream.streamState.thoughts}
+              partialContent={stream.streamState.partialContent}
+              status={stream.streamState.status}
+            />
+          )}
 
-          {sendMessage.error && !isPending && (
+          {stream.streamState.error && !isPending && (
             <div className="self-center rounded-md bg-danger-soft px-3 py-2 text-xs text-danger">
-              {sendMessage.error.message} — your last message wasn't sent.
+              {stream.streamState.error.message} — your last message wasn't sent.
             </div>
           )}
         </div>
       </div>
 
-      {/* Composer */}
       <MessageInput
         pending={isPending}
         onSend={(content) =>
-          sendMessage.mutate({ sessionId, content })
+          void stream.sendMessage({ sessionId, content })
         }
       />
     </div>

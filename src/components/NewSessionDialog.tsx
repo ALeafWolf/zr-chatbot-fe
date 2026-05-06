@@ -132,7 +132,7 @@ export default function NewSessionDialog({ open, onClose }: Props) {
               disabled={characters.isLoading}
               className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg shadow-sm transition-colors hover:border-border-strong focus:border-accent focus:outline-none disabled:opacity-50"
             >
-              {(characters.data ?? [{ character_id: DEFAULT_CHARACTER, name: "左然 (Zou Ran)" }]).map(
+              {(characters.data ?? [{ character_id: DEFAULT_CHARACTER, name: "左然" }]).map(
                 (c) => (
                   <option key={c.character_id} value={c.character_id}>
                     {c.name}

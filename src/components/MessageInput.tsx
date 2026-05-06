@@ -53,7 +53,7 @@ export default function MessageInput({
       }}
       className="border-t border-border bg-surface/80 px-3 py-3 backdrop-blur sm:px-4"
     >
-      <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-border bg-surface px-3 py-2 shadow-sm focus-within:border-accent">
+      <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-border bg-surface px-3 py-2 shadow-sm transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/35">
         <textarea
           ref={textareaRef}
           value={value}
@@ -62,7 +62,7 @@ export default function MessageInput({
           rows={1}
           placeholder={placeholder}
           disabled={disabled}
-          className="block max-h-[180px] min-h-[24px] flex-1 resize-none bg-transparent text-[15px] leading-6 text-fg outline-none placeholder:text-fg-subtle disabled:opacity-60"
+          className="block max-h-[180px] min-h-9 w-0 min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-6 text-fg outline-none! placeholder:text-fg-subtle focus-visible:outline-none! focus-visible:outline-offset-0! focus-visible:ring-0 disabled:opacity-60"
         />
         <button
           type="submit"

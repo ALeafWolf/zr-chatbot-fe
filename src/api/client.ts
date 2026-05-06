@@ -53,12 +53,24 @@ export const SessionSummarySchema = z.object({
 });
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 
+export const ThoughtSchema = z.object({
+  kind: z.string(),
+  text: z.string(),
+  ts: z.number(),
+  meta: z.unknown().optional(),
+});
+export type Thought = z.infer<typeof ThoughtSchema>;
+
 export const ChatMessageSchema = z.object({
   id: z.string(),
   role: z.enum(["user", "assistant"]),
   content: z.string(),
   turn_index: z.number(),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
+  thoughts: z.preprocess(
+    (v) => (Array.isArray(v) ? v : []),
+    z.array(ThoughtSchema),
+  ),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 

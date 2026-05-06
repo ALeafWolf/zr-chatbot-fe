@@ -52,6 +52,7 @@ export function useSendMessage(): UseMutationResult<
         content,
         turn_index: lastTurn + 1,
         created_at: now,
+        thoughts: [],
       };
 
       if (previous) {
