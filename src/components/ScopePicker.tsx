@@ -17,7 +17,7 @@ export default function ScopePicker({ value, onChange, id }: Props) {
       value={value}
       onChange={(e) => onChange(e.target.value as ContinuityScope)}
       disabled={isLoading}
-      className="block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg shadow-sm transition-colors hover:border-border-strong focus:border-accent focus:outline-none disabled:opacity-50"
+      className="block w-full rounded-xl border-2 border-border-soft bg-surface px-3 py-2 text-sm text-text-main shadow-soft-pink transition-colors hover:border-border-pink focus:border-primary-pink focus:outline-none disabled:opacity-50"
     >
       {(data ?? []).map((s) => (
         <option key={s.scope} value={s.scope}>

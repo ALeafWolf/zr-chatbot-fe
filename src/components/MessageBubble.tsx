@@ -9,7 +9,11 @@ interface Props {
   pending?: boolean;
 }
 
-export default function MessageBubble({ message, characterName, pending }: Props) {
+export default function MessageBubble({
+  message,
+  characterName,
+  pending,
+}: Props) {
   const isUser = message.role === "user";
   const [thoughtsOpen, setThoughtsOpen] = useState(false);
 
@@ -24,17 +28,15 @@ export default function MessageBubble({ message, characterName, pending }: Props
         isUser ? "justify-end" : "justify-start"
       }`}
     >
-      <div className="flex max-w-[85%] flex-col gap-1 sm:max-w-[75%]">
+      <div className={`flex flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
         {!isUser && characterName && (
-          <span className="px-1 text-[11px] font-medium text-fg-subtle">
+          <span className="px-1 text-xs font-semibold text-text-soft">
             {characterName}
           </span>
         )}
         <div
-          className={`whitespace-pre-wrap wrap-break-word rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed shadow-sm ${
-            isUser
-              ? "rounded-br-md bg-bubble-user-bg text-bubble-user-fg"
-              : "rounded-bl-md bg-bubble-assistant-bg text-bubble-assistant-fg"
+          className={`message-bubble text-15 leading-relaxed shadow-soft-pink whitespace-pre-wrap wrap-break-word ${
+            isUser ? "message-bubble--user" : ""
           } ${pending ? "opacity-70" : ""}`}
         >
           {message.content}
@@ -45,7 +47,7 @@ export default function MessageBubble({ message, characterName, pending }: Props
             <button
               type="button"
               onClick={() => setThoughtsOpen(true)}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-fg-muted hover:bg-surface-muted hover:text-fg"
+              className="inline-flex items-center gap-1 rounded-full border-2 border-border-soft bg-primary-pale px-2 py-1 text-xs font-bold text-primary-strong hover:bg-surface-2"
             >
               <Brain size={14} aria-hidden />
               查看思绪

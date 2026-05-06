@@ -19,7 +19,6 @@ export default function MessageInput({
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-grow textarea up to ~6 lines
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -28,7 +27,11 @@ export default function MessageInput({
   }, [value]);
 
   const trimmed = value.trim();
-  const canSend = !disabled && !pending && trimmed.length > 0 && trimmed.length <= MAX_LEN;
+  const canSend =
+    !disabled &&
+    !pending &&
+    trimmed.length > 0 &&
+    trimmed.length <= MAX_LEN;
 
   const submit = () => {
     if (!canSend) return;
@@ -51,9 +54,9 @@ export default function MessageInput({
         e.preventDefault();
         submit();
       }}
-      className="border-t border-border bg-surface/80 px-3 py-3 backdrop-blur sm:px-4"
+      className="border-t-2 border-border-soft bg-surface/88 px-3 py-3 backdrop-blur-sm sm:px-4"
     >
-      <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-border bg-surface px-3 py-2 shadow-sm transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/35">
+      <div className="input-shell mx-auto max-w-3xl">
         <textarea
           ref={textareaRef}
           value={value}
@@ -62,13 +65,13 @@ export default function MessageInput({
           rows={1}
           placeholder={placeholder}
           disabled={disabled}
-          className="block max-h-[180px] min-h-9 w-0 min-w-0 flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-6 text-fg outline-none! placeholder:text-fg-subtle focus-visible:outline-none! focus-visible:outline-offset-0! focus-visible:ring-0 disabled:opacity-60"
+          className="chat-textarea block min-h-9 w-0 min-w-0 flex-1 resize-none bg-transparent py-1.5 text-15 leading-6 text-text-main outline-none! placeholder:text-text-soft focus-visible:outline-none! focus-visible:outline-offset-0! focus-visible:ring-0 disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={!canSend}
           aria-label="Send message"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg transition-colors hover:bg-accent-hover disabled:bg-surface-muted disabled:text-fg-subtle"
+          className="icon-button-send"
         >
           {pending ? (
             <Loader2 className="animate-spin" size={16} />
@@ -77,10 +80,12 @@ export default function MessageInput({
           )}
         </button>
       </div>
-      <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1 text-[11px] text-fg-subtle">
+      <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-1 text-xs text-text-soft">
         <span>Enter to send · Shift+Enter for newline</span>
         <span
-          className={value.length > MAX_LEN * 0.9 ? "text-warning" : undefined}
+          className={
+            value.length > MAX_LEN * 0.9 ? "font-bold text-warning-soft" : undefined
+          }
           aria-live="polite"
         >
           {value.length}/{MAX_LEN}

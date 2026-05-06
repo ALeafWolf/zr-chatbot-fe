@@ -10,17 +10,17 @@ export default function TypingIndicator({ characterName }: Props) {
       aria-label={`${characterName ?? "Character"} is typing`}
       className="flex items-end gap-2 animate-fade-in"
     >
-      <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-bubble-assistant-bg px-4 py-3 shadow-sm">
+      <div className="message-bubble flex items-center gap-1 px-4 py-3 shadow-soft-pink">
         <span
-          className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-fg-muted"
+          className="typing-dot inline-block size-1.5 rounded-full bg-primary-strong"
           style={{ animationDelay: "0ms" }}
         />
         <span
-          className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-fg-muted"
+          className="typing-dot inline-block size-1.5 rounded-full bg-primary-strong"
           style={{ animationDelay: "150ms" }}
         />
         <span
-          className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-fg-muted"
+          className="typing-dot inline-block size-1.5 rounded-full bg-primary-strong"
           style={{ animationDelay: "300ms" }}
         />
       </div>

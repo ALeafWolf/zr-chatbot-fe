@@ -35,7 +35,7 @@ export default function ChatView({ sessionId }: Props) {
 
   if (session.isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-fg-subtle">
+      <div className="flex h-full items-center justify-center text-text-soft">
         <Loader2 className="animate-spin" size={20} />
       </div>
     );
@@ -44,7 +44,7 @@ export default function ChatView({ sessionId }: Props) {
   if (session.error) {
     return (
       <div className="flex h-full items-center justify-center px-6">
-        <div className="max-w-md rounded-lg bg-danger-soft px-4 py-3 text-sm text-danger">
+        <div className="max-w-md rounded-xl border-2 border-border-soft bg-danger-pale px-4 py-3 text-sm text-danger-soft">
           Failed to load this conversation: {session.error.message}
         </div>
       </div>
@@ -58,26 +58,26 @@ export default function ChatView({ sessionId }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-b border-border bg-surface/70 px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+      <header className="section-card mx-3 mt-3 overflow-hidden sm:mx-6 sm:mt-4">
+        <div className="section-card__header px-4 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold tracking-tight">
+            <h1 className="truncate text-lg font-extrabold tracking-tight text-primary-light">
               {characterName}
             </h1>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-fg-subtle">
-              <span className="rounded-full bg-surface-muted px-2 py-0.5">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-primary-light/90">
+              <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
                 {MODE_LABELS[session.data.mode]}
               </span>
-              <span className="rounded-full bg-surface-muted px-2 py-0.5">
+              <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
                 {scopeLabel(session.data.continuity_scope)}
               </span>
               {session.data.pinned_time && (
-                <span className="rounded-full bg-surface-muted px-2 py-0.5">
+                <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
                   时:{session.data.pinned_time}
                 </span>
               )}
               {session.data.pinned_location && (
-                <span className="rounded-full bg-surface-muted px-2 py-0.5">
+                <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
                   地:{session.data.pinned_location}
                 </span>
               )}
@@ -88,12 +88,13 @@ export default function ChatView({ sessionId }: Props) {
 
       <div
         ref={scrollerRef}
-        className="min-h-0 flex-1 overflow-y-auto scrollbar-thin px-3 py-6 sm:px-6"
+        className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-6"
       >
-        <div className="mx-auto flex max-w-3xl flex-col gap-4">
+        <div className="mx-auto flex max-w-3xl flex-col gap-5">
           {session.data.messages.length === 0 && !isPending && (
-            <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-fg-muted">
-              Start the scene. Try a setting cue (“在公寓门口偶遇”) or just say hi.
+            <div className="panel rounded-bubble border-2 border-dashed border-border-soft px-4 py-6 text-center text-sm text-text-muted">
+              Start the scene. Try a setting cue (“在公寓门口偶遇”) or just
+              say hi.
             </div>
           )}
 
@@ -116,8 +117,9 @@ export default function ChatView({ sessionId }: Props) {
           )}
 
           {stream.streamState.error && !isPending && (
-            <div className="self-center rounded-md bg-danger-soft px-3 py-2 text-xs text-danger">
-              {stream.streamState.error.message} — your last message wasn't sent.
+            <div className="self-center rounded-xl border-2 border-border-soft bg-danger-pale px-3 py-2 text-xs text-danger-soft">
+              {stream.streamState.error.message} — your last message wasn&apos;t
+              sent.
             </div>
           )}
         </div>

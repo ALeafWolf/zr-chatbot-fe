@@ -42,7 +42,7 @@ export default function ThoughtsPopup({ open, onClose, thoughts }: Props) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 pb-10 backdrop-blur-[1px] sm:items-center sm:p-6"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-overlay p-4 pb-10 backdrop-blur-sm sm:items-center sm:p-6"
       role="presentation"
     >
       <div
@@ -50,31 +50,31 @@ export default function ThoughtsPopup({ open, onClose, thoughts }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Thought chain"
-        className="max-h-[min(72vh,560px)] w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-xl"
+        className="thoughts-popup-shell panel flex w-full max-w-lg flex-col overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="text-sm font-semibold tracking-tight">思绪片段</div>
+        <div className="section-card__header flex w-full shrink-0 items-center justify-between gap-2 px-4 py-3">
+          <div className="text-sm font-extrabold tracking-tight">思绪片段</div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-fg-muted hover:bg-surface-muted hover:text-fg"
+            className="rounded-xl p-1 text-primary-light hover:bg-white/10"
             aria-label="Close"
           >
             <X size={18} />
           </button>
         </div>
-        <div className="max-h-[min(60vh,480px)] space-y-3 overflow-y-auto px-4 py-4 scrollbar-thin">
+        <div className="thoughts-popup-body custom-scrollbar space-y-0 overflow-y-auto bg-surface/90 px-4 py-4">
           {mergedThoughts.map((t, idx) => (
-            <div
-              key={`${t.ts}-${idx}`}
-              className="rounded-xl bg-surface-muted/60 px-3 py-2"
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium text-fg-subtle">
-                  {THOUGHT_KIND_LABELS[t.kind] ?? t.kind}
-                </span>
+            <div key={`${t.ts}-${idx}`}>
+              {idx > 0 && <hr className="dotted-divider" />}
+              <div className="thought-card">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded-full bg-header-dark px-2 py-0.5 text-2xs font-extrabold text-primary-light">
+                    {THOUGHT_KIND_LABELS[t.kind] ?? t.kind}
+                  </span>
+                </div>
+                <div className="text-13 leading-relaxed text-text-main">{t.text}</div>
               </div>
-              <div className="text-[13px] leading-relaxed text-fg">{t.text}</div>
             </div>
           ))}
         </div>

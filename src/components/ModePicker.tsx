@@ -19,10 +19,10 @@ export default function ModePicker({ value, onChange, name = "mode" }: Props) {
         return (
           <label
             key={mode}
-            className={`relative flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+            className={`relative flex cursor-pointer items-start gap-3 rounded-xl border-2 px-3 py-2.5 text-sm transition-colors ${
               active
-                ? "border-accent bg-accent-soft"
-                : "border-border bg-surface hover:bg-surface-hover"
+                ? "border-primary-pink bg-primary-pale shadow-soft-pink"
+                : "border-border-soft bg-surface hover:bg-primary-pale/60"
             } ${isLoading ? "opacity-60" : ""}`}
           >
             <input
@@ -35,19 +35,19 @@ export default function ModePicker({ value, onChange, name = "mode" }: Props) {
             />
             <span
               aria-hidden
-              className={`mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 ${
-                active ? "border-accent" : "border-border-strong"
+              className={`mt-1 flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 ${
+                active ? "border-primary-pink" : "border-border-soft"
               }`}
             >
               {active && (
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                <span className="size-1.5 rounded-full bg-primary-pink" />
               )}
             </span>
             <span className="min-w-0">
-              <span className="block font-medium text-fg">
+              <span className="block font-bold text-text-main">
                 {MODE_LABELS[mode]}
               </span>
-              <span className="mt-0.5 block text-xs text-fg-muted">
+              <span className="mt-0.5 block text-xs text-text-muted">
                 {MODE_DESCRIPTIONS[mode]}
               </span>
             </span>

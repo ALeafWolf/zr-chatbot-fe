@@ -15,7 +15,7 @@ export default function SessionList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12 text-fg-subtle">
+      <div className="flex items-center justify-center py-12 text-text-soft">
         <Loader2 className="animate-spin" size={18} />
       </div>
     );
@@ -23,7 +23,7 @@ export default function SessionList() {
 
   if (error) {
     return (
-      <div className="mx-2 mt-3 rounded-md bg-danger-soft px-3 py-2 text-xs text-danger">
+      <div className="mx-2 mt-3 rounded-xl border-2 border-border-soft bg-danger-pale px-3 py-2 text-13 text-danger-soft">
         Failed to load sessions: {error.message}
       </div>
     );
@@ -31,14 +31,14 @@ export default function SessionList() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="px-3 py-10 text-center text-xs text-fg-subtle">
+      <div className="px-3 py-10 text-center text-xs text-text-soft">
         No conversations yet. Start one above.
       </div>
     );
   }
 
   return (
-    <ul className="space-y-0.5 py-1">
+    <ul className="record-list">
       {data.map((s) => {
         const isActive = s.session_id === activeId;
         const summary =
@@ -47,10 +47,8 @@ export default function SessionList() {
         return (
           <li key={s.session_id}>
             <div
-              className={`group flex items-start gap-2 rounded-lg px-2.5 py-2 transition-colors ${
-                isActive
-                  ? "bg-accent-soft"
-                  : "hover:bg-surface-hover"
+              className={`record-row group ${
+                isActive ? "bg-primary-pale/90" : ""
               }`}
             >
               <Link
@@ -58,24 +56,22 @@ export default function SessionList() {
                 className="flex min-w-0 flex-1 items-start gap-2.5"
               >
                 <span
-                  className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+                  className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 border-border-soft ${
                     isActive
-                      ? "bg-accent text-accent-fg"
-                      : "bg-surface-muted text-fg-muted"
+                      ? "bg-primary-pink text-white"
+                      : "bg-primary-pale text-primary-strong"
                   }`}
                 >
                   <MessageCircle size={14} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div
-                    className={`truncate text-sm font-medium ${
-                      isActive ? "text-fg" : "text-fg"
-                    }`}
-                  >
+                  <div className="truncate text-sm font-bold text-text-main">
                     {characterLabel(s.character_id)}
                   </div>
-                  <div className="truncate text-xs text-fg-subtle">{summary}</div>
-                  <div className="mt-0.5 truncate text-[11px] text-fg-subtle">
+                  <div className="truncate text-xs text-text-muted">
+                    {summary}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-text-soft">
                     {formatRelativeTime(s.updated_at)}
                   </div>
                 </div>
@@ -91,7 +87,7 @@ export default function SessionList() {
                     deleteSession.mutate(s.session_id);
                   }
                 }}
-                className="invisible mt-1 rounded-md p-1.5 text-fg-subtle hover:bg-surface-muted hover:text-danger group-hover:visible focus-visible:visible"
+                className="invisible mt-1 rounded-lg p-1.5 text-text-soft hover:bg-surface-2 hover:text-danger-soft group-hover:visible focus-visible:visible"
                 aria-label="Delete conversation"
               >
                 <Trash2 size={14} />
