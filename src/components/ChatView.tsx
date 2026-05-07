@@ -1,9 +1,17 @@
-import { useEffect, useRef } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useEffect,
+} from "react";
 import { Loader2 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import StreamingAssistantBubble from "./StreamingAssistantBubble";
-import { useSession } from "../hooks/useSessions";
+import {
+  useSessionDetailInfinite,
+  sessionDetailFromPages,
+} from "../hooks/useSessions";
 import { useStreamMessage } from "../hooks/useStreamMessage";
 import {
   characterLabel,
@@ -16,24 +24,86 @@ interface Props {
 }
 
 export default function ChatView({ sessionId }: Props) {
-  const session = useSession(sessionId);
+  const sessionQuery = useSessionDetailInfinite(sessionId);
   const stream = useStreamMessage();
 
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const messagesLength = session.data?.messages.length ?? 0;
+  const session = sessionDetailFromPages(sessionQuery.data?.pages ?? []);
+  const messagesLength = session?.messages.length ?? 0;
+  const oldestMessageId = session?.messages[0]?.id;
 
-  useEffect(() => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const restoreScrollRef = useRef<{ sh: number; st: number } | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const initialScrollForSession = useRef<string | null>(null);
+
+  const tryFetchOlder = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el || restoreScrollRef.current) return;
+    if (el.scrollTop > 200) return;
+    if (!sessionQuery.hasNextPage || sessionQuery.isFetchingNextPage) return;
+    restoreScrollRef.current = { sh: el.scrollHeight, st: el.scrollTop };
+    void sessionQuery.fetchNextPage().catch(() => {
+      restoreScrollRef.current = null;
+    });
+  }, [
+    sessionQuery.hasNextPage,
+    sessionQuery.isFetchingNextPage,
+    sessionQuery.fetchNextPage,
+  ]);
+
+  const onScroll = useCallback(() => {
+    if (scrollRafRef.current != null) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      tryFetchOlder();
+    });
+  }, [tryFetchOlder]);
+
+  useEffect(
+    () => () => {
+      if (scrollRafRef.current != null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    },
+    [],
+  );
+
+  useLayoutEffect(() => {
+    const r = restoreScrollRef.current;
+    const el = scrollerRef.current;
+    if (!r || !el) return;
+    const delta = el.scrollHeight - r.sh;
+    el.scrollTop = r.st + delta;
+    restoreScrollRef.current = null;
+  }, [oldestMessageId, messagesLength]);
+
+  useLayoutEffect(() => {
+    if (initialScrollForSession.current !== sessionId) {
+      initialScrollForSession.current = null;
+    }
+  }, [sessionId]);
+
+  useLayoutEffect(() => {
+    if (!sessionId || messagesLength === 0) return;
+    if (initialScrollForSession.current === sessionId) return;
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    el.scrollTo({ top: el.scrollHeight, behavior: "auto" });
+    initialScrollForSession.current = sessionId;
+  }, [sessionId, messagesLength]);
+
+  useLayoutEffect(() => {
+    if (!stream.isPending) return;
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "auto" });
   }, [
-    messagesLength,
     stream.isPending,
     stream.streamState.partialContent,
     stream.streamState.thoughts.length,
   ]);
 
-  if (session.isLoading) {
+  if (sessionQuery.isPending && !sessionQuery.data) {
     return (
       <div className="flex h-full items-center justify-center text-text-soft">
         <Loader2 className="animate-spin" size={20} />
@@ -41,19 +111,19 @@ export default function ChatView({ sessionId }: Props) {
     );
   }
 
-  if (session.error) {
+  if (sessionQuery.error) {
     return (
       <div className="flex h-full items-center justify-center px-6">
         <div className="max-w-md rounded-xl border-2 border-border-soft bg-danger-pale px-4 py-3 text-sm text-danger-soft">
-          Failed to load this conversation: {session.error.message}
+          Failed to load this conversation: {sessionQuery.error.message}
         </div>
       </div>
     );
   }
 
-  if (!session.data) return null;
+  if (!session) return null;
 
-  const characterName = characterLabel(session.data.character_id);
+  const characterName = characterLabel(session.character_id);
   const isPending = stream.isPending;
 
   return (
@@ -66,19 +136,19 @@ export default function ChatView({ sessionId }: Props) {
             </h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-primary-light/90">
               <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
-                {MODE_LABELS[session.data.mode]}
+                {MODE_LABELS[session.mode]}
               </span>
               <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
-                {scopeLabel(session.data.continuity_scope)}
+                {scopeLabel(session.continuity_scope)}
               </span>
-              {session.data.pinned_time && (
+              {session.pinned_time && (
                 <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
-                  时:{session.data.pinned_time}
+                  时:{session.pinned_time}
                 </span>
               )}
-              {session.data.pinned_location && (
+              {session.pinned_location && (
                 <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
-                  地:{session.data.pinned_location}
+                  地:{session.pinned_location}
                 </span>
               )}
             </div>
@@ -88,17 +158,25 @@ export default function ChatView({ sessionId }: Props) {
 
       <div
         ref={scrollerRef}
+        onScroll={onScroll}
         className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-6"
       >
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
-          {session.data.messages.length === 0 && !isPending && (
+          {sessionQuery.isFetchingNextPage && (
+            <div className="flex justify-center py-2 text-xs text-text-muted">
+              <Loader2 className="mr-2 animate-spin" size={14} />
+              加载更早的消息…
+            </div>
+          )}
+
+          {session.messages.length === 0 && !isPending && (
             <div className="panel rounded-bubble border-2 border-dashed border-border-soft px-4 py-6 text-center text-sm text-text-muted">
               Start the scene. Try a setting cue (“在公寓门口偶遇”) or just
               say hi.
             </div>
           )}
 
-          {session.data.messages.map((m) => (
+          {session.messages.map((m) => (
             <MessageBubble
               key={m.id}
               message={m}

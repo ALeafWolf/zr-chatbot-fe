@@ -12,7 +12,7 @@ interface Props {
   onClose: () => void;
 }
 
-const DEFAULT_CHARACTER = "zou_ran";
+const DEFAULT_CHARACTER = "zuo_ran";
 const DEFAULT_SCOPE: ContinuityScope = "main_married";
 const DEFAULT_MODE: ChatMode = "canonical_live";
 

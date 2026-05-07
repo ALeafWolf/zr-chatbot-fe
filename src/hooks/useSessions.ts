@@ -1,13 +1,17 @@
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
+  type InfiniteData,
+  type UseInfiniteQueryResult,
   type UseMutationResult,
   type UseQueryResult,
 } from "@tanstack/react-query";
 import {
   api,
   type Character,
+  type ChatMessage,
   type ChatMode,
   type CreateSessionInput,
   type CreateSessionResponse,
@@ -16,10 +20,13 @@ import {
   type SessionSummary,
 } from "../api/client";
 
+export const SESSION_MESSAGE_PAGE_SIZE = 100;
+
 export const sessionKeys = {
   all: ["sessions"] as const,
   list: () => [...sessionKeys.all, "list"] as const,
   detail: (id: string) => [...sessionKeys.all, "detail", id] as const,
+  detailInfinite: (id: string) => [...sessionKeys.detail(id), "infinite"] as const,
 };
 
 export const lookupKeys = {
@@ -27,6 +34,22 @@ export const lookupKeys = {
   scopes: ["lookup", "scopes"] as const,
   modes: ["lookup", "modes"] as const,
 };
+
+/** Chronological messages: older pages appended before newer pages; dedupe by id. */
+export function mergeSessionPages(pages: SessionDetail[]): ChatMessage[] {
+  const merged = [...pages].reverse().flatMap((p) => p.messages);
+  const byId = new Map<string, ChatMessage>();
+  for (const m of merged) {
+    if (!byId.has(m.id)) byId.set(m.id, m);
+  }
+  return Array.from(byId.values());
+}
+
+/** Header fields from the newest-fetched page; messages replaced by merged history. */
+export function sessionDetailFromPages(pages: SessionDetail[]): SessionDetail | null {
+  if (!pages.length) return null;
+  return { ...pages[0], messages: mergeSessionPages(pages) };
+}
 
 export function useCharacters(): UseQueryResult<Character[]> {
   return useQuery({
@@ -60,12 +83,19 @@ export function useSessions(): UseQueryResult<SessionSummary[]> {
   });
 }
 
-export function useSession(
+export function useSessionDetailInfinite(
   sessionId: string | undefined,
-): UseQueryResult<SessionDetail> {
-  return useQuery({
-    queryKey: sessionId ? sessionKeys.detail(sessionId) : ["sessions", "detail", "none"],
-    queryFn: ({ signal }) => api.getSession(sessionId!, signal),
+): UseInfiniteQueryResult<InfiniteData<SessionDetail, number>, Error> {
+  return useInfiniteQuery({
+    queryKey: sessionId ? sessionKeys.detailInfinite(sessionId) : ["sessions", "detail", "none"],
+    queryFn: ({ pageParam, signal }) =>
+      api.getSession(sessionId!, signal, {
+        page: pageParam,
+        page_size: SESSION_MESSAGE_PAGE_SIZE,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _all, lastPageParam) =>
+      lastPage.messages.length < SESSION_MESSAGE_PAGE_SIZE ? undefined : lastPageParam + 1,
     enabled: !!sessionId,
     staleTime: 5 * 1000,
   });
@@ -91,7 +121,10 @@ export function useDeleteSession(): UseMutationResult<void, Error, string> {
     mutationFn: (sessionId) => api.deleteSession(sessionId),
     onSuccess: (_data, sessionId) => {
       void qc.invalidateQueries({ queryKey: sessionKeys.list() });
-      qc.removeQueries({ queryKey: sessionKeys.detail(sessionId) });
+      qc.removeQueries({
+        queryKey: sessionKeys.detail(sessionId),
+        exact: false,
+      });
     },
   });
 }

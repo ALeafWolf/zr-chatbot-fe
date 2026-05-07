@@ -2,6 +2,7 @@ import {
   useMutation,
   useQueryClient,
   type UseMutationResult,
+  type InfiniteData,
 } from "@tanstack/react-query";
 import {
   api,
@@ -17,7 +18,7 @@ interface SendArgs {
 }
 
 interface OptimisticContext {
-  previous: SessionDetail | undefined;
+  previous: InfiniteData<SessionDetail, number> | undefined;
   tempId: string;
 }
 
@@ -38,13 +39,13 @@ export function useSendMessage(): UseMutationResult<
     mutationFn: ({ sessionId, content }) => api.sendMessage(sessionId, content),
 
     onMutate: async ({ sessionId, content }) => {
-      const key = sessionKeys.detail(sessionId);
+      const key = sessionKeys.detailInfinite(sessionId);
       await qc.cancelQueries({ queryKey: key });
-      const previous = qc.getQueryData<SessionDetail>(key);
+      const previous = qc.getQueryData<InfiniteData<SessionDetail, number>>(key);
 
       const tempId = `temp-${Date.now()}`;
       const now = new Date();
-      const lastTurn = previous?.messages.at(-1)?.turn_index ?? 0;
+      const lastTurn = previous?.pages[0]?.messages.at(-1)?.turn_index ?? 0;
 
       const optimisticUser: ChatMessage = {
         id: `${tempId}-user`,
@@ -55,11 +56,14 @@ export function useSendMessage(): UseMutationResult<
         thoughts: [],
       };
 
-      if (previous) {
-        qc.setQueryData<SessionDetail>(key, {
+      if (previous?.pages[0]) {
+        qc.setQueryData(key, {
           ...previous,
-          updated_at: now,
-          messages: [...previous.messages, optimisticUser],
+          pages: previous.pages.map((p, i) =>
+            i === 0
+              ? { ...p, updated_at: now, messages: [...p.messages, optimisticUser] }
+              : p,
+          ),
         });
       }
 
@@ -68,7 +72,7 @@ export function useSendMessage(): UseMutationResult<
 
     onError: (_err, { sessionId }, ctx) => {
       if (!ctx) return;
-      const key = sessionKeys.detail(sessionId);
+      const key = sessionKeys.detailInfinite(sessionId);
       if (ctx.previous) {
         qc.setQueryData(key, ctx.previous);
       } else {
@@ -77,8 +81,7 @@ export function useSendMessage(): UseMutationResult<
     },
 
     onSuccess: (_reply, { sessionId }) => {
-      // Refetch to pick up the canonical assistant turn + final IDs.
-      void qc.invalidateQueries({ queryKey: sessionKeys.detail(sessionId) });
+      void qc.invalidateQueries({ queryKey: sessionKeys.detailInfinite(sessionId) });
       void qc.invalidateQueries({ queryKey: sessionKeys.list() });
     },
   });

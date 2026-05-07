@@ -27,7 +27,7 @@ export function scopeLabel(scope: string): string {
 }
 
 const CHARACTER_LABELS: Record<string, string> = {
-  zou_ran: "左然",
+  zuo_ran: "左然",
 };
 
 export function characterLabel(characterId: string, fallback?: string): string {

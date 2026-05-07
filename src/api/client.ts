@@ -203,9 +203,19 @@ export const api = {
     return requestParsed("/api/sessions", { method: "GET", signal }, z.array(SessionSummarySchema));
   },
 
-  getSession(sessionId: string, signal?: AbortSignal): Promise<SessionDetail> {
+  getSession(
+    sessionId: string,
+    signal?: AbortSignal,
+    opts?: { page?: number; page_size?: number },
+  ): Promise<SessionDetail> {
+    const page = opts?.page ?? 0;
+    const page_size = opts?.page_size ?? 100;
+    const q = new URLSearchParams({
+      page: String(page),
+      page_size: String(page_size),
+    });
     return requestParsed(
-      `/api/sessions/${encodeURIComponent(sessionId)}?page=0&page_size=200`,
+      `/api/sessions/${encodeURIComponent(sessionId)}?${q.toString()}`,
       { method: "GET", signal },
       SessionDetailSchema,
     );
