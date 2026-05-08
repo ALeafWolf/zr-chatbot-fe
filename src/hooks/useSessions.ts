@@ -15,6 +15,7 @@ import {
   type ChatMode,
   type CreateSessionInput,
   type CreateSessionResponse,
+  type PatchSessionResponse,
   type Scope,
   type SessionDetail,
   type SessionSummary,
@@ -124,6 +125,24 @@ export function useDeleteSession(): UseMutationResult<void, Error, string> {
       qc.removeQueries({
         queryKey: sessionKeys.detail(sessionId),
         exact: false,
+      });
+    },
+  });
+}
+
+export function usePatchSessionDisplayTitle(): UseMutationResult<
+  PatchSessionResponse,
+  Error,
+  { sessionId: string; display_title: string | null }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, display_title }) =>
+      api.patchSessionDisplayTitle(sessionId, { display_title }),
+    onSuccess: (_data, { sessionId }) => {
+      void qc.invalidateQueries({ queryKey: sessionKeys.list() });
+      void qc.invalidateQueries({
+        queryKey: sessionKeys.detailInfinite(sessionId),
       });
     },
   });

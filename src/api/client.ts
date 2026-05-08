@@ -42,12 +42,16 @@ export const ScopeSchema = z.object({
 });
 export type Scope = z.infer<typeof ScopeSchema>;
 
+/** Matches backend `DISPLAY_TITLE_MAX_LEN`. */
+export const SESSION_DISPLAY_TITLE_MAX_LEN = 120;
+
 export const SessionSummarySchema = z.object({
   session_id: z.string(),
   character_id: z.string(),
   mode: ChatModeSchema,
   continuity_scope: ContinuityScopeStoredSchema,
   session_summary: z.string().nullable().optional(),
+  display_title: z.string().nullable().optional(),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   updated_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
 });
@@ -82,6 +86,7 @@ export const SessionDetailSchema = z.object({
   pinned_time: z.string().nullable().optional(),
   pinned_location: z.string().nullable().optional(),
   session_summary: z.string().nullable().optional(),
+  display_title: z.string().nullable().optional(),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   updated_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   messages: z.array(ChatMessageSchema),
@@ -102,7 +107,17 @@ export const CreateSessionResponseSchema = z.object({
 });
 export type CreateSessionResponse = z.infer<typeof CreateSessionResponseSchema>;
 
+export const PatchSessionResponseSchema = z.object({
+  session_id: z.string(),
+  display_title: z.string().nullable(),
+});
+export type PatchSessionResponse = z.infer<typeof PatchSessionResponseSchema>;
+
 /* ---------- Request payloads ---------- */
+
+export interface PatchSessionDisplayTitleInput {
+  display_title: string | null;
+}
 
 export interface CreateSessionInput {
   character_id: string;
@@ -233,6 +248,22 @@ export const api = {
     await rawRequest(`/api/sessions/${encodeURIComponent(sessionId)}`, {
       method: "DELETE",
     });
+  },
+
+  patchSessionDisplayTitle(
+    sessionId: string,
+    input: PatchSessionDisplayTitleInput,
+  ): Promise<PatchSessionResponse> {
+    return requestParsed(
+      `/api/sessions/${encodeURIComponent(sessionId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          display_title: input.display_title,
+        }),
+      },
+      PatchSessionResponseSchema,
+    );
   },
 
   sendMessage(sessionId: string, content: string): Promise<SendMessageReply> {

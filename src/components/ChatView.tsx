@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import StreamingAssistantBubble from "./StreamingAssistantBubble";
+import EditableSessionTitle from "./EditableSessionTitle";
 import {
   useSessionDetailInfinite,
   sessionDetailFromPages,
@@ -131,9 +132,13 @@ export default function ChatView({ sessionId }: Props) {
       <header className="section-card mx-3 mt-3 overflow-hidden sm:mx-6 sm:mt-4">
         <div className="section-card__header px-4 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-extrabold tracking-tight text-primary-light">
-              {characterName}
-            </h1>
+            <EditableSessionTitle
+              sessionId={session.session_id}
+              characterId={session.character_id}
+              displayTitle={session.display_title}
+              variant="header"
+              className="truncate text-lg font-extrabold tracking-tight text-primary-light"
+            />
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-primary-light/90">
               <span className="rounded-full border border-border-soft bg-primary-pale px-2 py-0.5 font-semibold text-primary-strong">
                 {MODE_LABELS[session.mode]}

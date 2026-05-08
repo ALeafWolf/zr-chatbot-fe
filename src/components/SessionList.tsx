@@ -2,11 +2,11 @@ import { Link, useParams } from "react-router-dom";
 import { Loader2, MessageCircle, Trash2 } from "lucide-react";
 import { useDeleteSession, useSessions } from "../hooks/useSessions";
 import {
-  characterLabel,
   formatRelativeTime,
   MODE_LABELS,
   scopeLabel,
 } from "../lib/labels";
+import EditableSessionTitle from "./EditableSessionTitle";
 
 export default function SessionList() {
   const { data, isLoading, error } = useSessions();
@@ -65,9 +65,13 @@ export default function SessionList() {
                   <MessageCircle size={14} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-bold text-text-main">
-                    {characterLabel(s.character_id)}
-                  </div>
+                  <EditableSessionTitle
+                    sessionId={s.session_id}
+                    characterId={s.character_id}
+                    displayTitle={s.display_title}
+                    variant="sidebar"
+                    className="truncate text-sm font-bold text-text-main"
+                  />
                   <div className="truncate text-xs text-text-muted">
                     {summary}
                   </div>
