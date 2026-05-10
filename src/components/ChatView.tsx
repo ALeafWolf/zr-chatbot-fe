@@ -3,6 +3,7 @@ import {
   useLayoutEffect,
   useRef,
   useEffect,
+  useState,
 } from "react";
 import { Loader2 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
@@ -12,6 +13,7 @@ import EditableSessionTitle from "./EditableSessionTitle";
 import {
   useSessionDetailInfinite,
   sessionDetailFromPages,
+  usePatchSession,
 } from "../hooks/useSessions";
 import { useStreamMessage } from "../hooks/useStreamMessage";
 import {
@@ -27,6 +29,7 @@ interface Props {
 export default function ChatView({ sessionId }: Props) {
   const sessionQuery = useSessionDetailInfinite(sessionId);
   const stream = useStreamMessage();
+  const patchSession = usePatchSession();
 
   const session = sessionDetailFromPages(sessionQuery.data?.pages ?? []);
   const messagesLength = session?.messages.length ?? 0;
@@ -36,6 +39,8 @@ export default function ChatView({ sessionId }: Props) {
   const restoreScrollRef = useRef<{ sh: number; st: number } | null>(null);
   const scrollRafRef = useRef<number | null>(null);
   const initialScrollForSession = useRef<string | null>(null);
+  const [tempDraft, setTempDraft] = useState(1);
+  const tempPatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tryFetchOlder = useCallback(() => {
     const el = scrollerRef.current;
@@ -67,6 +72,36 @@ export default function ChatView({ sessionId }: Props) {
       }
     },
     [],
+  );
+
+  useEffect(
+    () => () => {
+      if (tempPatchTimerRef.current != null) {
+        clearTimeout(tempPatchTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!session) return;
+    setTempDraft(session.temperature);
+  }, [session?.session_id, session?.temperature]);
+
+  const scheduleTemperaturePatch = useCallback(
+    (value: number) => {
+      if (tempPatchTimerRef.current != null) {
+        clearTimeout(tempPatchTimerRef.current);
+      }
+      tempPatchTimerRef.current = setTimeout(() => {
+        tempPatchTimerRef.current = null;
+        patchSession.mutate({
+          sessionId,
+          temperature: value,
+        });
+      }, 350);
+    },
+    [patchSession, sessionId],
   );
 
   useLayoutEffect(() => {
@@ -126,12 +161,13 @@ export default function ChatView({ sessionId }: Props) {
 
   const characterName = characterLabel(session.character_id);
   const isPending = stream.isPending;
+  const settingsDisabled = isPending || patchSession.isPending;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="section-card mx-3 mt-3 overflow-hidden sm:mx-6 sm:mt-4">
-        <div className="section-card__header px-4 sm:px-6">
-          <div className="min-w-0">
+        <div className="section-card__header flex flex-wrap items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="min-w-0 flex-1">
             <EditableSessionTitle
               sessionId={session.session_id}
               characterId={session.character_id}
@@ -156,6 +192,51 @@ export default function ChatView({ sessionId }: Props) {
                   地:{session.pinned_location}
                 </span>
               )}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-3 sm:flex-row sm:items-center sm:gap-4 text-xs text-primary-light/90">
+            <div className="flex items-center gap-2">
+              <input
+                id={`thinking-${session.session_id}`}
+                type="checkbox"
+                className="h-3.5 w-3.5 shrink-0 rounded border-border-soft text-primary-strong focus-visible:ring-2 focus-visible:ring-primary-light/40 focus-visible:outline-none disabled:opacity-50"
+                checked={session.thinking}
+                disabled={settingsDisabled}
+                onChange={() =>
+                  patchSession.mutate({
+                    sessionId: session.session_id,
+                    thinking: !session.thinking,
+                  })
+                }
+              />
+              <label
+                htmlFor={`thinking-${session.session_id}`}
+                className={`whitespace-nowrap font-medium ${settingsDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+              >
+                Generation reasoning (thinking)
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="whitespace-nowrap font-medium text-primary-light/90">
+                Temperature
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={2}
+                step={0.1}
+                className="h-2 w-28 accent-primary-strong sm:w-32 disabled:opacity-50"
+                value={tempDraft}
+                disabled={settingsDisabled}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setTempDraft(v);
+                  scheduleTemperaturePatch(v);
+                }}
+              />
+              <span className="w-10 tabular-nums text-right font-semibold text-primary-strong">
+                {tempDraft.toFixed(1)}
+              </span>
             </div>
           </div>
         </div>

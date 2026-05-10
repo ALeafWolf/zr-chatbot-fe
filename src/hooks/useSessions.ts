@@ -16,6 +16,7 @@ import {
   type CreateSessionInput,
   type CreateSessionResponse,
   type PatchSessionResponse,
+  type PatchSessionInput,
   type Scope,
   type SessionDetail,
   type SessionSummary,
@@ -130,15 +131,15 @@ export function useDeleteSession(): UseMutationResult<void, Error, string> {
   });
 }
 
-export function usePatchSessionDisplayTitle(): UseMutationResult<
+export function usePatchSession(): UseMutationResult<
   PatchSessionResponse,
   Error,
-  { sessionId: string; display_title: string | null }
+  { sessionId: string } & PatchSessionInput
 > {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ sessionId, display_title }) =>
-      api.patchSessionDisplayTitle(sessionId, { display_title }),
+    mutationFn: ({ sessionId, ...patch }) =>
+      api.patchSession(sessionId, patch),
     onSuccess: (_data, { sessionId }) => {
       void qc.invalidateQueries({ queryKey: sessionKeys.list() });
       void qc.invalidateQueries({

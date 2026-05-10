@@ -9,7 +9,7 @@ import {
 import {
   SESSION_DISPLAY_TITLE_MAX_LEN,
 } from "../api/client";
-import { usePatchSessionDisplayTitle } from "../hooks/useSessions";
+import { usePatchSession } from "../hooks/useSessions";
 import { characterLabel } from "../lib/labels";
 
 function normalizeStoredTitle(v: string | null | undefined): string | null {
@@ -37,7 +37,7 @@ export default function EditableSessionTitle({
   className = "",
 }: EditableSessionTitleProps) {
   const { mutateAsync, reset, isPending, isError, error } =
-    usePatchSessionDisplayTitle();
+    usePatchSession();
   const resolved =
     normalizeStoredTitle(displayTitle) ?? characterLabel(characterId);
   const [editing, setEditing] = useState(false);

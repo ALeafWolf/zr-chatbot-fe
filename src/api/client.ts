@@ -52,6 +52,14 @@ export const SessionSummarySchema = z.object({
   continuity_scope: ContinuityScopeStoredSchema,
   session_summary: z.string().nullable().optional(),
   display_title: z.string().nullable().optional(),
+  thinking: z.preprocess(
+    (v) => (typeof v === "boolean" ? v : true),
+    z.boolean(),
+  ),
+  temperature: z.preprocess(
+    (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 1),
+    z.number(),
+  ),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   updated_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
 });
@@ -87,6 +95,14 @@ export const SessionDetailSchema = z.object({
   pinned_location: z.string().nullable().optional(),
   session_summary: z.string().nullable().optional(),
   display_title: z.string().nullable().optional(),
+  thinking: z.preprocess(
+    (v) => (typeof v === "boolean" ? v : true),
+    z.boolean(),
+  ),
+  temperature: z.preprocess(
+    (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 1),
+    z.number(),
+  ),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   updated_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
   messages: z.array(ChatMessageSchema),
@@ -110,13 +126,18 @@ export type CreateSessionResponse = z.infer<typeof CreateSessionResponseSchema>;
 export const PatchSessionResponseSchema = z.object({
   session_id: z.string(),
   display_title: z.string().nullable(),
+  thinking: z.boolean(),
+  temperature: z.number(),
 });
 export type PatchSessionResponse = z.infer<typeof PatchSessionResponseSchema>;
 
 /* ---------- Request payloads ---------- */
 
-export interface PatchSessionDisplayTitleInput {
-  display_title: string | null;
+/** At least one field must be set when calling {@link api.patchSession}. */
+export interface PatchSessionInput {
+  display_title?: string | null;
+  thinking?: boolean;
+  temperature?: number;
 }
 
 export interface CreateSessionInput {
@@ -125,6 +146,10 @@ export interface CreateSessionInput {
   continuity_scope: ContinuityScope;
   pinned_time?: string;
   pinned_location?: string;
+  thinking?: boolean;
+  /** Set when non-empty after trim; max {@link SESSION_DISPLAY_TITLE_MAX_LEN}. */
+  display_title?: string;
+  temperature?: number;
 }
 
 /* ---------- Errors ---------- */
@@ -237,9 +262,23 @@ export const api = {
   },
 
   createSession(input: CreateSessionInput): Promise<CreateSessionResponse> {
+    const body: Record<string, unknown> = {
+      character_id: input.character_id,
+      mode: input.mode,
+      continuity_scope: input.continuity_scope,
+    };
+    if (input.pinned_time != null) body.pinned_time = input.pinned_time;
+    if (input.pinned_location != null)
+      body.pinned_location = input.pinned_location;
+    if (input.thinking !== undefined) body.thinking = input.thinking;
+    if (input.temperature !== undefined) body.temperature = input.temperature;
+    if (input.display_title != null) {
+      const t = input.display_title.trim();
+      if (t.length > 0) body.display_title = t.slice(0, SESSION_DISPLAY_TITLE_MAX_LEN);
+    }
     return requestParsed(
       "/api/sessions",
-      { method: "POST", body: JSON.stringify(input) },
+      { method: "POST", body: JSON.stringify(body) },
       CreateSessionResponseSchema,
     );
   },
@@ -250,18 +289,22 @@ export const api = {
     });
   },
 
-  patchSessionDisplayTitle(
+  patchSession(
     sessionId: string,
-    input: PatchSessionDisplayTitleInput,
+    input: PatchSessionInput,
   ): Promise<PatchSessionResponse> {
+    const body: Record<string, unknown> = {};
+    if (input.display_title !== undefined) {
+      body.display_title = input.display_title;
+    }
+    if (input.thinking !== undefined) body.thinking = input.thinking;
+    if (input.temperature !== undefined) body.temperature = input.temperature;
+    if (Object.keys(body).length === 0) {
+      throw new Error("patchSession requires at least one field");
+    }
     return requestParsed(
       `/api/sessions/${encodeURIComponent(sessionId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          display_title: input.display_title,
-        }),
-      },
+      { method: "PATCH", body: JSON.stringify(body) },
       PatchSessionResponseSchema,
     );
   },

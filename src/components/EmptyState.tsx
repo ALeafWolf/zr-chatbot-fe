@@ -16,7 +16,7 @@ export default function EmptyState() {
           </h1>
           <p className="mt-2 text-sm text-text-muted">
             默认篇章：
-            <span className="font-bold text-text-main">挚爱篇</span>
+            <span className="font-bold text-text-main">相守篇</span>
             <br />
             默认模式:
             <span className="font-bold text-text-main">canonical_live</span>
