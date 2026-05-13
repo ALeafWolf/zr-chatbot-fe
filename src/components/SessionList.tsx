@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Loader2, MessageCircle, Trash2 } from "lucide-react";
 import { useDeleteSession, useSessions } from "../hooks/useSessions";
 import {
@@ -11,6 +11,7 @@ import EditableSessionTitle from "./EditableSessionTitle";
 export default function SessionList() {
   const { data, isLoading, error } = useSessions();
   const { id: activeId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const deleteSession = useDeleteSession();
 
   if (isLoading) {
@@ -88,7 +89,13 @@ export default function SessionList() {
                       "Delete this conversation? It will be soft-deleted.",
                     )
                   ) {
-                    deleteSession.mutate(s.session_id);
+                    deleteSession.mutate(s.session_id, {
+                      onSuccess: () => {
+                        if (s.session_id === activeId) {
+                          navigate("/", { replace: true });
+                        }
+                      },
+                    });
                   }
                 }}
                 className="invisible mt-1 rounded-lg p-1.5 text-text-soft hover:bg-surface-2 hover:text-danger-soft group-hover:visible focus-visible:visible"

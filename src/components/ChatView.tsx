@@ -34,11 +34,15 @@ export default function ChatView({ sessionId }: Props) {
   const session = sessionDetailFromPages(sessionQuery.data?.pages ?? []);
   const messagesLength = session?.messages.length ?? 0;
   const oldestMessageId = session?.messages[0]?.id;
+  const latestMessage = session?.messages[messagesLength - 1];
+  const latestMessageId = latestMessage?.id;
+  const latestMessageRole = latestMessage?.role;
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const restoreScrollRef = useRef<{ sh: number; st: number } | null>(null);
   const scrollRafRef = useRef<number | null>(null);
   const initialScrollForSession = useRef<string | null>(null);
+  const latestScrolledMessageRef = useRef<string | null>(null);
   const [tempDraft, setTempDraft] = useState(1);
   const tempPatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -137,7 +141,19 @@ export default function ChatView({ sessionId }: Props) {
     stream.isPending,
     stream.streamState.partialContent,
     stream.streamState.thoughts.length,
+    stream.streamState.status,
   ]);
+
+  useLayoutEffect(() => {
+    if (!latestMessageId) return;
+    const scrollKey = `${sessionId}:${latestMessageId}`;
+    if (latestScrolledMessageRef.current === scrollKey) return;
+    latestScrolledMessageRef.current = scrollKey;
+    if (latestMessageRole !== "assistant") return;
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "auto" });
+  }, [sessionId, latestMessageId, latestMessageRole]);
 
   if (sessionQuery.isPending && !sessionQuery.data) {
     return (

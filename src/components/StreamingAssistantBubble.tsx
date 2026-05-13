@@ -1,6 +1,7 @@
 import type { Thought } from "../api/client";
 import type { StreamStatus } from "../hooks/useStreamMessage";
 import { THOUGHT_KIND_LABELS } from "../lib/labels";
+import { thoughtDisplayText } from "../lib/thoughtDisplay";
 
 interface Props {
   characterName: string;
@@ -16,7 +17,9 @@ export default function StreamingAssistantBubble({
   status,
 }: Props) {
   const hasReply = partialContent.trim().length > 0;
-  const visibleThoughts = thoughts.filter((t) => t.text.trim().length > 0);
+  const visibleThoughts = thoughts
+    .map((t) => ({ ...t, text: thoughtDisplayText(t) }))
+    .filter((t) => t.text.trim().length > 0);
   const showDots =
     !hasReply &&
     (status === "thinking" ||
