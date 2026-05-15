@@ -41,6 +41,45 @@ export function joinNativeThoughtText(prev: string, next: string): string {
   return prev + next;
 }
 
+export function appendStreamingThought(
+  thoughts: Thought[],
+  incoming: Thought,
+): Thought[] {
+  const last = thoughts[thoughts.length - 1];
+  if (incoming.kind === "native" && last?.kind === "native") {
+    return [
+      ...thoughts.slice(0, -1),
+      {
+        ...last,
+        text: joinNativeThoughtText(last.text, incoming.text),
+      },
+    ];
+  }
+
+  if (
+    incoming.kind === "recall" &&
+    !thoughts.some((t) => t.kind === "recall")
+  ) {
+    const firstNativeIndex = thoughts.findIndex((t) => t.kind === "native");
+    if (firstNativeIndex >= 0) {
+      return [
+        ...thoughts.slice(0, firstNativeIndex),
+        incoming,
+        ...thoughts.slice(firstNativeIndex),
+      ];
+    }
+  }
+
+  return [...thoughts, incoming];
+}
+
+export function normalizeThoughtOrder(thoughts: Thought[]): Thought[] {
+  return thoughts.reduce<Thought[]>(
+    (out, thought) => appendStreamingThought(out, thought),
+    [],
+  );
+}
+
 /** Fold consecutive `native` thoughts for readable popup / history display. */
 export function mergeAdjacentNativeThoughts(thoughts: Thought[]): Thought[] {
   const out: Thought[] = [];

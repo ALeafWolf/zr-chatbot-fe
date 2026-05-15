@@ -2,7 +2,10 @@ import { useCallback, useRef, useState } from "react";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { postMessagesStream } from "../api/streamClient";
 import type { ChatMessage, SessionDetail, Thought } from "../api/client";
-import { joinNativeThoughtText } from "../lib/thoughtDisplay";
+import {
+  appendStreamingThought,
+  normalizeThoughtOrder,
+} from "../lib/thoughtDisplay";
 import { sessionKeys } from "./useSessions";
 
 interface StreamArgs {
@@ -127,25 +130,10 @@ export function useStreamMessage() {
                 meta: data.meta,
               };
               setStreamState((s) => {
-                const prev = s.thoughts;
-                const last = prev[prev.length - 1];
-                if (incoming.kind === "native" && last?.kind === "native") {
-                  return {
-                    ...s,
-                    status: "thinking",
-                    thoughts: [
-                      ...prev.slice(0, -1),
-                      {
-                        ...last,
-                        text: joinNativeThoughtText(last.text, incoming.text),
-                      },
-                    ],
-                  };
-                }
                 return {
                   ...s,
                   status: "thinking",
-                  thoughts: [...prev, incoming],
+                  thoughts: appendStreamingThought(s.thoughts, incoming),
                 };
               });
             }
@@ -166,7 +154,7 @@ export function useStreamMessage() {
                 was_rewritten: Boolean(data.was_rewritten),
                 was_deflected: Boolean(data.was_deflected),
                 thoughts: Array.isArray(data.thoughts)
-                  ? (data.thoughts as Thought[])
+                  ? normalizeThoughtOrder(data.thoughts as Thought[])
                   : [],
               };
             }
