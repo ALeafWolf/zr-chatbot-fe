@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { Thought } from "../api/client";
 import { THOUGHT_KIND_LABELS } from "../lib/labels";
-import { mergeAdjacentNativeThoughts } from "../lib/thoughtDisplay";
+import { mergeNativeThoughts } from "../lib/thoughtDisplay";
 
 interface Props {
   open: boolean;
@@ -38,7 +38,7 @@ export default function ThoughtsPopup({ open, onClose, thoughts }: Props) {
 
   if (!open || typeof document === "undefined") return null;
 
-  const mergedThoughts = mergeAdjacentNativeThoughts(thoughts);
+  const mergedThoughts = mergeNativeThoughts(thoughts);
 
   return createPortal(
     <div

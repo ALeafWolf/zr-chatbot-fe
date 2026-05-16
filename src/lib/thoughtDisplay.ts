@@ -45,15 +45,18 @@ export function appendStreamingThought(
   thoughts: Thought[],
   incoming: Thought,
 ): Thought[] {
-  const last = thoughts[thoughts.length - 1];
-  if (incoming.kind === "native" && last?.kind === "native") {
-    return [
-      ...thoughts.slice(0, -1),
-      {
-        ...last,
-        text: joinNativeThoughtText(last.text, incoming.text),
-      },
-    ];
+  if (incoming.kind === "native") {
+    const nativeIndex = thoughts.findIndex((t) => t.kind === "native");
+    if (nativeIndex >= 0) {
+      return thoughts.map((thought, index) =>
+        index === nativeIndex
+          ? {
+              ...thought,
+              text: joinNativeThoughtText(thought.text, incoming.text),
+            }
+          : thought,
+      );
+    }
   }
 
   if (
@@ -80,17 +83,24 @@ export function normalizeThoughtOrder(thoughts: Thought[]): Thought[] {
   );
 }
 
-/** Fold consecutive `native` thoughts for readable popup / history display. */
-export function mergeAdjacentNativeThoughts(thoughts: Thought[]): Thought[] {
+/** Fold every `native` fragment into one readable thought row. */
+export function mergeNativeThoughts(thoughts: Thought[]): Thought[] {
   const out: Thought[] = [];
+  let nativeIndex = -1;
+
   for (const t of thoughts) {
     const text = thoughtDisplayText(t);
-    const last = out[out.length - 1];
-    if (t.kind === "native" && last?.kind === "native") {
-      last.text = joinNativeThoughtText(last.text, text);
+
+    if (t.kind === "native" && nativeIndex >= 0) {
+      out[nativeIndex] = {
+        ...out[nativeIndex],
+        text: joinNativeThoughtText(out[nativeIndex].text, text),
+      };
     } else {
+      if (t.kind === "native") nativeIndex = out.length;
       out.push({ ...t, text });
     }
   }
+
   return out.filter((row) => row.text.trim().length > 0);
 }
