@@ -6,6 +6,7 @@ import {
   appendStreamingThought,
   normalizeThoughtOrder,
 } from "../lib/thoughtDisplay";
+import { AppCommandResultSchema } from "../api/appCommandTypes";
 import { sessionKeys } from "./useSessions";
 
 interface StreamArgs {
@@ -32,7 +33,11 @@ export interface DonePayload {
   was_rewritten: boolean;
   was_deflected: boolean;
   thoughts: Thought[];
+  route?: string;
+  app_command?: unknown;
 }
+
+export type StreamRoute = "roleplay_turn" | "app_command" | "unsupported";
 
 export interface StreamState {
   status: StreamStatus;
@@ -40,6 +45,13 @@ export interface StreamState {
   partialContent: string;
   error: Error | null;
   lastDone: DonePayload | null;
+  /** Tracks whether any delta events have arrived — used to suppress the
+   *  character streaming bubble for app commands (which never emit deltas). */
+  hasDeltas: boolean;
+  /** Route signalled by the backend via an early SSE `route` event, so the
+   *  frontend can adapt its UI before the stream finishes (for example,
+   *  suppressing the character streaming bubble for app commands). */
+  streamRoute: StreamRoute | null;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -56,6 +68,8 @@ export function useStreamMessage() {
     partialContent: "",
     error: null,
     lastDone: null,
+    hasDeltas: false,
+    streamRoute: null,
   });
 
   const [isSending, setIsSending] = useState(false);
@@ -77,10 +91,12 @@ export function useStreamMessage() {
       const optimisticUser: ChatMessage = {
         id: `${tempId}-user`,
         role: "user",
+        route: "roleplay_turn",
         content,
         turn_index: lastTurn + 1,
         created_at: now,
         thoughts: [],
+        app_command: undefined,
       };
 
       const ctx: OptimisticContext = { previous, tempId };
@@ -102,6 +118,8 @@ export function useStreamMessage() {
         partialContent: "",
         error: null,
         lastDone: null,
+        hasDeltas: false,
+        streamRoute: null,
       });
       setIsSending(true);
 
@@ -119,6 +137,16 @@ export function useStreamMessage() {
         await postMessagesStream(sessionId, content, {
           signal: ac.signal,
           onEvent: (event, data) => {
+            if (event === "route" && isRecord(data)) {
+              const route = data.route;
+              if (
+                route === "roleplay_turn" ||
+                route === "app_command" ||
+                route === "unsupported"
+              ) {
+                setStreamState((s) => ({ ...s, streamRoute: route }));
+              }
+            }
             if (event === "thought" && isRecord(data)) {
               const kind = typeof data.kind === "string" ? data.kind : "native";
               const text = typeof data.text === "string" ? data.text : "";
@@ -144,9 +172,19 @@ export function useStreamMessage() {
                 ...s,
                 status: "streaming",
                 partialContent: s.partialContent + piece,
+                hasDeltas: true,
               }));
             }
             if (event === "done" && isRecord(data)) {
+              // Validate streaming app_command payload so downstream components
+              // receive a typed result or undefined, never a malformed object.
+              const rawAppCmd = data.app_command;
+              let validatedAppCmd: unknown = undefined;
+              if (rawAppCmd != null) {
+                const parsed = AppCommandResultSchema.safeParse(rawAppCmd);
+                if (parsed.success) validatedAppCmd = parsed.data;
+              }
+
               donePayload = {
                 message_id: String(data.message_id ?? ""),
                 content: String(data.content ?? ""),
@@ -156,6 +194,8 @@ export function useStreamMessage() {
                 thoughts: Array.isArray(data.thoughts)
                   ? normalizeThoughtOrder(data.thoughts as Thought[])
                   : [],
+                route: typeof data.route === "string" ? data.route : undefined,
+                app_command: validatedAppCmd,
               };
             }
             if (event === "error" && isRecord(data)) {
@@ -172,13 +212,15 @@ export function useStreamMessage() {
           throw new Error("Stream ended without a completion frame");
         }
 
-        setStreamState({
+        setStreamState((s) => ({
           status: "done",
-          thoughts: donePayload.thoughts,
-          partialContent: donePayload.content,
+          thoughts: donePayload!.thoughts,
+          partialContent: donePayload!.content,
           error: null,
-          lastDone: donePayload,
-        });
+          lastDone: donePayload!,
+          hasDeltas: s.hasDeltas,
+          streamRoute: s.streamRoute,
+        }));
 
         void qc.invalidateQueries({ queryKey: sessionKeys.detailInfinite(sessionId) });
         void qc.invalidateQueries({ queryKey: sessionKeys.list() });
@@ -194,6 +236,8 @@ export function useStreamMessage() {
           partialContent: "",
           error,
           lastDone: null,
+          hasDeltas: false,
+          streamRoute: null,
         });
         return null;
       } finally {
@@ -215,6 +259,8 @@ export function useStreamMessage() {
         partialContent: "",
         error: null,
         lastDone: null,
+        hasDeltas: false,
+        streamRoute: null,
       }),
   };
 }

@@ -9,6 +9,8 @@ import { Loader2 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import StreamingAssistantBubble from "./StreamingAssistantBubble";
+import AppCommandMessage from "./AppCommandMessage";
+import type { AppCommandResult } from "../api/appCommandTypes";
 import EditableSessionTitle from "./EditableSessionTitle";
 import {
   useSessionDetailInfinite,
@@ -278,16 +280,42 @@ export default function ChatView({ sessionId }: Props) {
             </div>
           )}
 
-          {session.messages.map((m) => (
-            <MessageBubble
-              key={m.id}
-              message={m}
-              characterName={characterName}
-              pending={m.id.startsWith("temp-")}
-            />
-          ))}
+          {session.messages.map((m) =>
+            m.route === "app_command" && m.app_command ? (
+              <AppCommandMessage key={m.id} message={m} />
+            ) : (
+              <MessageBubble
+                key={m.id}
+                message={m}
+                characterName={characterName}
+                pending={m.id.startsWith("temp-")}
+              />
+            ),
+          )}
 
-          {isPending && (
+          {/* Temp app-command card shown between stream done and refetch */}
+          {stream.streamState.lastDone?.route === "app_command" &&
+            stream.streamState.lastDone.app_command != null &&
+            !session.messages.some(
+              (m) => m.id === stream.streamState.lastDone!.message_id,
+            ) && (
+              <AppCommandMessage
+                message={{
+                  id: stream.streamState.lastDone.message_id,
+                  content: stream.streamState.lastDone.content,
+                  app_command: stream.streamState.lastDone.app_command as
+                    | AppCommandResult
+                    | undefined,
+                }}
+              />
+            )}
+
+          {/* Streaming bubble — suppressed for app commands even during
+              stream processing (the backend emits a `route` SSE event after
+              classification, so the frontend knows to avoid the character
+              streaming bubble for utility commands). */}
+          {isPending &&
+            stream.streamState.streamRoute !== "app_command" && (
             <StreamingAssistantBubble
               characterName={characterName}
               thoughts={stream.streamState.thoughts}

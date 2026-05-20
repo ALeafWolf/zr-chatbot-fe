@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { OptionalAppCommandSchema } from "./appCommandTypes";
 
 /**
  * Shared base URL. In dev we rely on the Vite proxy (`/api` → backend).
@@ -76,6 +77,7 @@ export type Thought = z.infer<typeof ThoughtSchema>;
 export const ChatMessageSchema = z.object({
   id: z.string(),
   role: z.enum(["user", "assistant"]),
+  route: z.string().optional().default("roleplay_turn"),
   content: z.string(),
   turn_index: z.number(),
   created_at: z.union([z.string(), z.date()]).transform((v) => new Date(v)),
@@ -83,6 +85,7 @@ export const ChatMessageSchema = z.object({
     (v) => (Array.isArray(v) ? v : []),
     z.array(ThoughtSchema),
   ),
+  app_command: OptionalAppCommandSchema,
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 

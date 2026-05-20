@@ -50,10 +50,12 @@ export function useSendMessage(): UseMutationResult<
       const optimisticUser: ChatMessage = {
         id: `${tempId}-user`,
         role: "user",
+        route: "roleplay_turn",
         content,
         turn_index: lastTurn + 1,
         created_at: now,
         thoughts: [],
+        app_command: undefined,
       };
 
       if (previous?.pages[0]) {
