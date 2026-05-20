@@ -6,6 +6,7 @@ import type {
   SessionStatusResult,
   SessionStatusFields,
   UnsupportedCommandResult,
+  CommandHelpResult,
 } from "../api/appCommandTypes";
 import {
   formatLabel,
@@ -212,6 +213,40 @@ function UnsupportedCard({ result }: { result: UnsupportedCommandResult }) {
 }
 
 // ---------------------------------------------------------------------------
+// Command help card
+// ---------------------------------------------------------------------------
+
+function CommandHelpCard({ result }: { result: CommandHelpResult }) {
+  return (
+    <div className="panel rounded-xl overflow-hidden">
+      <div className="flex items-start gap-3 p-4">
+        <div className="mt-0.5 shrink-0 rounded-lg bg-primary-pale p-2 text-primary-strong">
+          <Info size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 text-sm font-semibold">{result.title}</p>
+          <p className="mb-3 text-xs text-text-muted">{result.message}</p>
+          {result.sections.map((section, i) => (
+            <div key={i} className="mb-3 last:mb-0">
+              <p className="mb-1 text-xs font-bold text-text-muted">
+                {section.title}
+              </p>
+              <ul className="space-y-0.5">
+                {section.items.map((item, j) => (
+                  <li key={j} className="text-xs text-text-muted">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main component — dispatches on the validated discriminated union
 // ---------------------------------------------------------------------------
 
@@ -224,6 +259,8 @@ export default function AppCommandMessage({ message }: AppCommandMessageProps) {
       return <FileExportCard result={payload} />;
     case "session_status":
       return <SessionStatusCard result={payload} />;
+    case "command_help":
+      return <CommandHelpCard result={payload} />;
     case "unsupported":
       return <UnsupportedCard result={payload} />;
     default:

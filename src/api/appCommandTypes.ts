@@ -1,6 +1,38 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Export options
+// ---------------------------------------------------------------------------
+export const ExportOptionsSchema = z.object({
+  format: z.enum(["md", "json", "txt"]),
+  turn_types: z.array(z.enum(["roleplay", "app_command", "unsupported"])).min(1),
+  include_thoughts: z.boolean(),
+});
+export type ExportOptions = z.infer<typeof ExportOptionsSchema>;
+
+// ---------------------------------------------------------------------------
+// Export help section
+// ---------------------------------------------------------------------------
+export const ExportHelpSectionSchema = z.object({
+  title: z.string(),
+  items: z.array(z.string()),
+});
+export type ExportHelpSection = z.infer<typeof ExportHelpSectionSchema>;
+
+// ---------------------------------------------------------------------------
+// Command help result
+// ---------------------------------------------------------------------------
+export const CommandHelpResultSchema = z.object({
+  kind: z.literal("command_help"),
+  command: z.literal("show_export_help"),
+  message: z.string(),
+  title: z.string(),
+  language: z.enum(["en", "zh"]),
+  sections: z.array(ExportHelpSectionSchema),
+});
+export type CommandHelpResult = z.infer<typeof CommandHelpResultSchema>;
+
+// ---------------------------------------------------------------------------
 // File export artifact
 // ---------------------------------------------------------------------------
 export const FileExportArtifactSchema = z.object({
@@ -21,6 +53,7 @@ export const FileExportResultSchema = z.object({
   kind: z.literal("file_export"),
   command: z.literal("export_session_raw_turns"),
   message: z.string(),
+  options: ExportOptionsSchema,
   artifact: FileExportArtifactSchema,
 });
 export type FileExportResult = z.infer<typeof FileExportResultSchema>;
@@ -87,6 +120,7 @@ export type UnsupportedCommandResult = z.infer<
 export const AppCommandResultSchema = z.discriminatedUnion("kind", [
   FileExportResultSchema,
   SessionStatusResultSchema,
+  CommandHelpResultSchema,
   UnsupportedCommandResultSchema,
 ]);
 export type AppCommandResult = z.infer<typeof AppCommandResultSchema>;
