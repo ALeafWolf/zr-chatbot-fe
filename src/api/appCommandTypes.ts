@@ -7,6 +7,7 @@ export const ExportOptionsSchema = z.object({
   format: z.enum(["md", "json", "txt"]),
   turn_types: z.array(z.enum(["roleplay", "app_command", "unsupported"])).min(1),
   include_thoughts: z.boolean(),
+  include_native_thoughts: z.boolean(),
 });
 export type ExportOptions = z.infer<typeof ExportOptionsSchema>;
 
