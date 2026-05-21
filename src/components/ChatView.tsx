@@ -293,9 +293,12 @@ export default function ChatView({ sessionId }: Props) {
             ),
           )}
 
-          {/* Temp app-command card shown between stream done and refetch */}
+          {/* Temp app-command card shown between stream done and refetch —
+              scoped to the active sessionId so switching sessions doesn't
+              render the previous session's temporary card. */}
           {stream.streamState.lastDone?.route === "app_command" &&
             stream.streamState.lastDone.app_command != null &&
+            stream.streamState.lastSessionId === sessionId &&
             !session.messages.some(
               (m) => m.id === stream.streamState.lastDone!.message_id,
             ) && (

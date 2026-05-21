@@ -45,6 +45,9 @@ export interface StreamState {
   partialContent: string;
   error: Error | null;
   lastDone: DonePayload | null;
+  /** The sessionId that produced `lastDone`, used to scope temporary
+   *  app-command cards to the originating session. */
+  lastSessionId: string | null;
   /** Tracks whether any delta events have arrived — used to suppress the
    *  character streaming bubble for app commands (which never emit deltas). */
   hasDeltas: boolean;
@@ -68,6 +71,7 @@ export function useStreamMessage() {
     partialContent: "",
     error: null,
     lastDone: null,
+    lastSessionId: null,
     hasDeltas: false,
     streamRoute: null,
   });
@@ -118,6 +122,7 @@ export function useStreamMessage() {
         partialContent: "",
         error: null,
         lastDone: null,
+        lastSessionId: null,
         hasDeltas: false,
         streamRoute: null,
       });
@@ -218,6 +223,7 @@ export function useStreamMessage() {
           partialContent: donePayload!.content,
           error: null,
           lastDone: donePayload!,
+          lastSessionId: sessionId,
           hasDeltas: s.hasDeltas,
           streamRoute: s.streamRoute,
         }));
@@ -236,6 +242,7 @@ export function useStreamMessage() {
           partialContent: "",
           error,
           lastDone: null,
+          lastSessionId: null,
           hasDeltas: false,
           streamRoute: null,
         });
@@ -259,6 +266,7 @@ export function useStreamMessage() {
         partialContent: "",
         error: null,
         lastDone: null,
+        lastSessionId: null,
         hasDeltas: false,
         streamRoute: null,
       }),
