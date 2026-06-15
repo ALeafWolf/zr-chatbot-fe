@@ -134,6 +134,58 @@ export const PatchSessionResponseSchema = z.object({
 });
 export type PatchSessionResponse = z.infer<typeof PatchSessionResponseSchema>;
 
+/* ---------- Axis state (TG1 backend, TG2 frontend) ---------- */
+
+const AxisValueSchema = z.object({
+  connection: z.number(),
+  valence: z.number(),
+  arousal: z.number(),
+  restraint: z.number(),
+});
+
+const BandValueSchema = z.object({
+  connection: z.enum(["high", "mid", "low"]),
+  valence: z.enum(["high", "mid", "low"]),
+  arousal: z.enum(["high", "mid", "low"]),
+  restraint: z.enum(["high", "mid", "low"]),
+});
+
+const HistoryEntrySchema = z.object({
+  tick: z.number(),
+  axes: AxisValueSchema,
+});
+
+const LastTraceSchema = z.object({
+  event: z
+    .object({
+      type: z.string(),
+      intensity: z.number(),
+    })
+    .nullable(),
+  couplings_fired: z.array(z.string()),
+  effective_baselines: z.object({
+    connection: z.number().optional(),
+    valence: z.number().optional(),
+    arousal: z.number().optional(),
+    restraint: z.number().optional(),
+  }),
+});
+
+export const AxisStateSchema = z.object({
+  session_id: z.string(),
+  enabled: z.boolean(),
+  source: z.enum(["persisted", "baseline"]),
+  scope: z.string(), // NOT the strict scope enum — legacy scopes must pass through (review N3)
+  tick: z.number(),
+  axes: AxisValueSchema,
+  bands: BandValueSchema,
+  baselines: AxisValueSchema,
+  history: z.array(HistoryEntrySchema),
+  last_trace: LastTraceSchema.nullable(),
+  updated_at: z.string(),
+});
+export type AxisState = z.infer<typeof AxisStateSchema>;
+
 /* ---------- Request payloads ---------- */
 
 /** At least one field must be set when calling {@link api.patchSession}. */
@@ -317,6 +369,14 @@ export const api = {
       `/api/sessions/${encodeURIComponent(sessionId)}/messages`,
       { method: "POST", body: JSON.stringify({ content }) },
       SendMessageReplySchema,
+    );
+  },
+
+  getAxisState(sessionId: string, signal?: AbortSignal): Promise<AxisState> {
+    return requestParsed(
+      `/api/sessions/${encodeURIComponent(sessionId)}/axis-state`,
+      { method: "GET", signal },
+      AxisStateSchema,
     );
   },
 };

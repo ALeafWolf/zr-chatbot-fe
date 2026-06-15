@@ -1,5 +1,24 @@
 import type { ChatMode } from "../api/client";
 
+const AXIS_NAMES = ["connection", "valence", "arousal", "restraint"] as const;
+export type AxisName = (typeof AXIS_NAMES)[number];
+export const ALL_AXES: AxisName[] = [...AXIS_NAMES];
+
+/** Bilingual axis labels (design A6). */
+export const AXIS_LABELS: Record<AxisName, string> = {
+  connection: "亲近",
+  valence: "情绪",
+  arousal: "唤起",
+  restraint: "克制",
+};
+
+/** Band labels. */
+export const BAND_LABELS: Record<string, string> = {
+  high: "偏高",
+  mid: "中",
+  low: "偏低",
+};
+
 export const MODE_LABELS: Record<ChatMode, string> = {
   canonical_live: "Canonical · live",
   pinned_scenario: "Pinned scenario",
