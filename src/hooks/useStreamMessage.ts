@@ -59,7 +59,10 @@ export interface StreamState {
 
 const POLL_INITIAL_DELAY_MS = 1500;
 const POLL_RETRY_DELAY_MS = 3000;
-const POLL_BUDGET_MS = 20_000;
+// Post-turn jobs (extraction + memory + summary LLM calls) regularly run longer
+// than 20s, so a shorter budget made the poll give up before the engine wrote
+// the new tick, leaving the drawer stale until a manual refresh.
+const POLL_BUDGET_MS = 60_000;
 
 /**
  * Start a bounded tick-gated poll for the axis state (design A5).

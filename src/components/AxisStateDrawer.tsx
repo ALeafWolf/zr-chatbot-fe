@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Loader2, X } from "lucide-react";
 import { useAxisState } from "../hooks/useSessions";
 import { ALL_AXES, AXIS_LABELS, BAND_LABELS, EVENT_LABELS, EVENT_DESCRIPTIONS, INTENSITY_HINT } from "../lib/labels";
@@ -269,7 +270,15 @@ function DrawerBody({ data }: DrawerBodyProps) {
 // ---------------------------------------------------------------------------
 
 export default function AxisStateDrawer({ sessionId, open, onClose }: Props) {
-  const { data, isPending, error } = useAxisState(sessionId);
+  const { data, isPending, error, refetch } = useAxisState(sessionId);
+
+  // Refetch whenever the drawer opens (or the session changes while open). The
+  // drawer is always mounted, so opening it never remounts the query — without
+  // this the tick/axis values stay stale if the post-turn poll gave up before
+  // the engine finished writing, until a full page reload.
+  useEffect(() => {
+    if (open) void refetch();
+  }, [open, sessionId, refetch]);
 
   return (
     <>
