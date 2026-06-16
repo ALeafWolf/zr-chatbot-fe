@@ -1,8 +1,9 @@
 import { Loader2, X } from "lucide-react";
 import { useAxisState } from "../hooks/useSessions";
-import { ALL_AXES, AXIS_LABELS, BAND_LABELS } from "../lib/labels";
+import { ALL_AXES, AXIS_LABELS, BAND_LABELS, EVENT_LABELS, EVENT_DESCRIPTIONS, INTENSITY_HINT } from "../lib/labels";
 import type { AxisName } from "../lib/labels";
 import type { AxisState } from "../api/client";
+import InfoTip from "./InfoTip";
 
 interface Props {
   sessionId: string;
@@ -224,20 +225,38 @@ function DrawerBody({ data }: DrawerBodyProps) {
         </div>
       </div>
 
-      {/* last_trace info (compact) */}
+      {/* last_trace info (compact) — with tooltips (design §T4/T5) */}
       {data.last_trace && (
         <div className="rounded-lg bg-surface-2 px-3 py-2 text-2xs text-text-muted">
           {data.last_trace.event && (
-            <div>
-              Event:{" "}
+            <div className="mb-1">
+              <span className="mr-1 text-text-muted">触发事件</span>
               <span className="font-medium text-text-main">
-                {data.last_trace.event.type.replace(/_/g, " ")}
-              </span>{" "}
-              ({data.last_trace.event.intensity.toFixed(2)})
+                {EVENT_LABELS[data.last_trace.event.type] ?? data.last_trace.event.type.replace(/_/g, " ")}
+              </span>
+              <InfoTip text={EVENT_DESCRIPTIONS[data.last_trace.event.type] ?? ""} />
+              {" "}
+              <span className="tabular-nums">
+                ({data.last_trace.event.intensity.toFixed(2)})
+              </span>
+              <InfoTip text={INTENSITY_HINT} />
             </div>
           )}
           {data.last_trace.couplings_fired.length > 0 && (
-            <div>Couplings: {data.last_trace.couplings_fired.join(", ")}</div>
+            <div className="flex flex-wrap gap-x-1.5 gap-y-0.5">
+              <span className="mr-1 text-text-muted">联动</span>
+              {data.last_trace.couplings_fired.map((id: string) => {
+                const entry = data.coupling_glossary?.[id];
+                return (
+                  <span key={id} className="inline-flex items-center">
+                    <span className="font-medium text-text-main">
+                      {entry?.label ?? id}
+                    </span>
+                    {entry?.description && <InfoTip text={entry.description} />}
+                  </span>
+                );
+              })}
+            </div>
           )}
         </div>
       )}

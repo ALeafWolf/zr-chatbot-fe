@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { postMessagesStream } from "../api/streamClient";
-import { api, type AxisState, type ChatMessage, type SessionDetail, type Thought } from "../api/client";
+import { api, type ChatMessage, type SessionDetail, type Thought } from "../api/client";
 import {
   appendStreamingThought,
   normalizeThoughtOrder,
@@ -68,7 +68,7 @@ const POLL_BUDGET_MS = 20_000;
  */
 function startAxisPoll(
   sessionId: string,
-  capturedTick: number | null,
+  targetTick: number,
   qc: ReturnType<typeof useQueryClient>,
   signal: AbortSignal,
   timeoutRef: { current: ReturnType<typeof setTimeout> | null },
@@ -83,11 +83,12 @@ function startAxisPoll(
       (state) => {
         if (signal.aborted) return;
 
-        // F2: handle null capturedTick — stop on first persisted state with tick≥1
-        const advanced =
-          capturedTick === null
-            ? state.source === "persisted" && state.tick >= 1
-            : state.tick > capturedTick;
+        // Poll toward the just-completed turn's index. The backend sets the axis
+        // tick to the assistant turn index (== done.turn_index), so the new state
+        // has landed once the persisted tick reaches targetTick. Targeting the
+        // turn index (rather than a pre-send cached tick) avoids stopping early on
+        // a stale tick when the axis-state query was not cached before sending.
+        const advanced = state.source === "persisted" && state.tick >= targetTick;
 
         // Stop: tick advanced → success
         if (advanced) {
@@ -123,7 +124,6 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 export function useStreamMessage() {
   const qc = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
-  const capturedTickRef = useRef<number | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollAbortRef = useRef<AbortController | null>(null);
 
@@ -173,11 +173,6 @@ export function useStreamMessage() {
       }
       const ac = new AbortController();
       abortRef.current = ac;
-
-      // Capture pre-send tick for post-turn detection (design A5)
-      const axisKey = sessionKeys.axisState(sessionId);
-      const currentAxisState = qc.getQueryData<AxisState>(axisKey);
-      capturedTickRef.current = currentAxisState?.tick ?? null;
 
       const key = sessionKeys.detailInfinite(sessionId);
       await qc.cancelQueries({ queryKey: key });
@@ -328,11 +323,11 @@ export function useStreamMessage() {
 
         // N1: gate poll — only roleplay turns advance the engine tick
         if (donePayload?.route === "roleplay_turn") {
-          // Trigger tick-gated post-turn poll (design A5) with its own AbortController
+          // Trigger tick-gated post-turn poll (design A5) with its own AbortController.
+          // Poll toward donePayload.turn_index: the backend sets the axis tick to the
+          // assistant turn index, so this is the authoritative target for "new state landed".
           pollAbortRef.current = new AbortController();
-          const captured = capturedTickRef.current;
-          capturedTickRef.current = null; // consumed once
-          startAxisPoll(sessionId, captured, qc, pollAbortRef.current.signal, pollTimeoutRef);
+          startAxisPoll(sessionId, donePayload.turn_index, qc, pollAbortRef.current.signal, pollTimeoutRef);
         }
 
         return donePayload;

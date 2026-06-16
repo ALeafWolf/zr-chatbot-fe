@@ -183,6 +183,10 @@ export const AxisStateSchema = z.object({
   history: z.array(HistoryEntrySchema),
   last_trace: LastTraceSchema.nullable(),
   updated_at: z.string(),
+  coupling_glossary: z
+    .record(z.object({ label: z.string(), description: z.string() }))
+    .optional()
+    .default({}),
 });
 export type AxisState = z.infer<typeof AxisStateSchema>;
 

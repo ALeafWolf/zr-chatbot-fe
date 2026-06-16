@@ -45,6 +45,34 @@ export function scopeLabel(scope: string): string {
   return SCOPE_LABELS[scope] ?? scope;
 }
 
+/** Bilingual event labels for the 8 TurnEvent types (design §T4). */
+export const EVENT_LABELS: Record<string, string> = {
+  routine_exchange: "日常交流",
+  user_pursues_connection: "用户主动靠近",
+  user_withdraws: "用户疏远",
+  user_discloses_vulnerability: "用户袒露脆弱",
+  user_shows_warmth: "用户表达温暖",
+  user_challenges: "用户质疑挑战",
+  tension_escalation: "张力升级",
+  intimate_moment: "亲密时刻",
+};
+
+/** Event descriptions shown in tooltips (design §T4). */
+export const EVENT_DESCRIPTIONS: Record<string, string> = {
+  routine_exchange: "一次普通往来，没有明显的情感推拉；本回合只发生轴向基线的自然回落（drift）。",
+  user_pursues_connection: "用户在拉近距离、寻求联结；通常带动亲近与情绪上行。",
+  user_withdraws: "用户在回避或拉开距离；通常带动亲近与情绪下行。",
+  user_discloses_vulnerability: "用户分享了脆弱或私密的一面；亲近上行，唤起略降（更安全）。",
+  user_shows_warmth: "用户表达善意、关心或欣赏；情绪与亲近上行。",
+  user_challenges: "用户提出质疑、反驳或对抗；唤起上行，情绪略降。",
+  tension_escalation: "冲突或紧张升级；唤起上行，情绪与亲近下行。",
+  intimate_moment: "明显的亲密互动；通常带动亲近与唤起上行。",
+};
+
+/** Intensity tooltip copy. */
+export const INTENSITY_HINT =
+  "强度（0–1）：模型对该事件强弱的判断，作为本回合轴变化的放大系数——越接近 1，本回合各轴移动越大；为 0 或「日常交流」时仅有自然回落。";
+
 const CHARACTER_LABELS: Record<string, string> = {
   zuo_ran: "左然",
 };
