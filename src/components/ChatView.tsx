@@ -5,13 +5,14 @@ import {
   useEffect,
   useState,
 } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, BarChart3 } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import StreamingAssistantBubble from "./StreamingAssistantBubble";
 import AppCommandMessage from "./AppCommandMessage";
 import type { AppCommandResult } from "../api/appCommandTypes";
 import EditableSessionTitle from "./EditableSessionTitle";
+import AxisStateDrawer from "./AxisStateDrawer";
 import {
   useSessionDetailInfinite,
   sessionDetailFromPages,
@@ -32,6 +33,14 @@ export default function ChatView({ sessionId }: Props) {
   const sessionQuery = useSessionDetailInfinite(sessionId);
   const stream = useStreamMessage();
   const patchSession = usePatchSession();
+  const [axisDrawerOpen, setAxisDrawerOpen] = useState(false);
+
+  // O1: cancel in-flight poll on session switch (ChatView isn't re-keyed)
+  useEffect(() => {
+    return () => {
+      stream.cancelPendingPoll();
+    };
+  }, [sessionId, stream.cancelPendingPoll]);
 
   const session = sessionDetailFromPages(sessionQuery.data?.pages ?? []);
   const messagesLength = session?.messages.length ?? 0;
@@ -256,6 +265,15 @@ export default function ChatView({ sessionId }: Props) {
                 {tempDraft.toFixed(1)}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => setAxisDrawerOpen((v) => !v)}
+              className={`icon-button ${axisDrawerOpen ? "border-primary-pink bg-surface-2" : "icon-button--dark"} -mr-1`}
+              aria-label={axisDrawerOpen ? "Close axis drawer" : "Open axis drawer"}
+              title="Emotional Axis"
+            >
+              <BarChart3 size={18} />
+            </button>
           </div>
         </div>
       </header>
@@ -341,6 +359,12 @@ export default function ChatView({ sessionId }: Props) {
         onSend={(content) =>
           void stream.sendMessage({ sessionId, content })
         }
+      />
+
+      <AxisStateDrawer
+        sessionId={sessionId}
+        open={axisDrawerOpen}
+        onClose={() => setAxisDrawerOpen(false)}
       />
     </div>
   );

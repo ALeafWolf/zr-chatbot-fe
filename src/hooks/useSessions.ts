@@ -10,6 +10,8 @@ import {
 } from "@tanstack/react-query";
 import {
   api,
+  ApiError,
+  type AxisState,
   type Character,
   type ChatMessage,
   type ChatMode,
@@ -29,6 +31,7 @@ export const sessionKeys = {
   list: () => [...sessionKeys.all, "list"] as const,
   detail: (id: string) => [...sessionKeys.all, "detail", id] as const,
   detailInfinite: (id: string) => [...sessionKeys.detail(id), "infinite"] as const,
+  axisState: (id: string) => [...sessionKeys.all, "axisState", id] as const,
 };
 
 export const lookupKeys = {
@@ -100,6 +103,28 @@ export function useSessionDetailInfinite(
       lastPage.messages.length < SESSION_MESSAGE_PAGE_SIZE ? undefined : lastPageParam + 1,
     enabled: !!sessionId,
     staleTime: 5 * 1000,
+  });
+}
+
+export function useAxisState(
+  sessionId: string | undefined,
+): UseQueryResult<AxisState | null> {
+  return useQuery({
+    queryKey: sessionKeys.axisState(sessionId ?? "none"),
+    queryFn: async ({ signal }) => {
+      try {
+        return await api.getAxisState(sessionId!, signal);
+      } catch (err) {
+        // 404 (session not found) is expected during navigation; return null
+        if (err instanceof ApiError && err.status === 404) {
+          return null;
+        }
+        throw err;
+      }
+    },
+    enabled: !!sessionId,
+    staleTime: 10 * 1000,
+    retry: false,
   });
 }
 

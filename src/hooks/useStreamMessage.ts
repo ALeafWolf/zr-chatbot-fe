@@ -1,7 +1,7 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { postMessagesStream } from "../api/streamClient";
-import type { ChatMessage, SessionDetail, Thought } from "../api/client";
+import { api, type ChatMessage, type SessionDetail, type Thought } from "../api/client";
 import {
   appendStreamingThought,
   normalizeThoughtOrder,
@@ -57,6 +57,69 @@ export interface StreamState {
   streamRoute: StreamRoute | null;
 }
 
+const POLL_INITIAL_DELAY_MS = 1500;
+const POLL_RETRY_DELAY_MS = 3000;
+// Post-turn jobs (extraction + memory + summary LLM calls) regularly run longer
+// than 20s, so a shorter budget made the poll give up before the engine wrote
+// the new tick, leaving the drawer stale until a manual refresh.
+const POLL_BUDGET_MS = 60_000;
+
+/**
+ * Start a bounded tick-gated poll for the axis state (design A5).
+ * Schedules via the provided ref so the caller can cancel.
+ * Returns immediately; the poll schedules itself recursively via setTimeout.
+ */
+function startAxisPoll(
+  sessionId: string,
+  targetTick: number,
+  qc: ReturnType<typeof useQueryClient>,
+  signal: AbortSignal,
+  timeoutRef: { current: ReturnType<typeof setTimeout> | null },
+): void {
+  const axisKey = sessionKeys.axisState(sessionId);
+  const start = Date.now();
+
+  function pollOnce(): void {
+    if (signal.aborted) return;
+
+    api.getAxisState(sessionId, signal).then(
+      (state) => {
+        if (signal.aborted) return;
+
+        // Poll toward the just-completed turn's index. The backend sets the axis
+        // tick to the assistant turn index (== done.turn_index), so the new state
+        // has landed once the persisted tick reaches targetTick. Targeting the
+        // turn index (rather than a pre-send cached tick) avoids stopping early on
+        // a stale tick when the axis-state query was not cached before sending.
+        const advanced = state.source === "persisted" && state.tick >= targetTick;
+
+        // Stop: tick advanced → success
+        if (advanced) {
+          void qc.invalidateQueries({ queryKey: axisKey });
+          return;
+        }
+
+        // Stop: engine is off — never poll
+        if (!state.enabled) return;
+
+        // Stop: budget exhausted
+        if (Date.now() - start >= POLL_BUDGET_MS) return;
+
+        // Schedule next poll
+        timeoutRef.current = setTimeout(pollOnce, POLL_RETRY_DELAY_MS);
+      },
+      () => {
+        // Recoverable error — retry unless budget or abort
+        if (signal.aborted) return;
+        if (Date.now() - start >= POLL_BUDGET_MS) return;
+        timeoutRef.current = setTimeout(pollOnce, POLL_RETRY_DELAY_MS);
+      },
+    );
+  }
+
+  timeoutRef.current = setTimeout(pollOnce, POLL_INITIAL_DELAY_MS);
+}
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
@@ -64,6 +127,20 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 export function useStreamMessage() {
   const qc = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollAbortRef = useRef<AbortController | null>(null);
+
+  // F1: teardown poll on unmount (ChatView doesn't remount on session switch)
+  useEffect(() => {
+    return () => {
+      pollAbortRef.current?.abort();
+      pollAbortRef.current = null;
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const [streamState, setStreamState] = useState<StreamState>({
     status: "idle",
@@ -78,9 +155,25 @@ export function useStreamMessage() {
 
   const [isSending, setIsSending] = useState(false);
 
+  const cancelPendingPoll = useCallback(() => {
+    pollAbortRef.current?.abort();
+    pollAbortRef.current = null;
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  }, []);
+
   const sendMessage = useCallback(
     async ({ sessionId, content }: StreamArgs): Promise<DonePayload | null> => {
       abortRef.current?.abort();
+      // F1: abort any in-flight poll before starting a new send
+      pollAbortRef.current?.abort();
+      pollAbortRef.current = null;
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
       const ac = new AbortController();
       abortRef.current = ac;
 
@@ -231,6 +324,15 @@ export function useStreamMessage() {
         void qc.invalidateQueries({ queryKey: sessionKeys.detailInfinite(sessionId) });
         void qc.invalidateQueries({ queryKey: sessionKeys.list() });
 
+        // N1: gate poll — only roleplay turns advance the engine tick
+        if (donePayload?.route === "roleplay_turn") {
+          // Trigger tick-gated post-turn poll (design A5) with its own AbortController.
+          // Poll toward donePayload.turn_index: the backend sets the axis tick to the
+          // assistant turn index, so this is the authoritative target for "new state landed".
+          pollAbortRef.current = new AbortController();
+          startAxisPoll(sessionId, donePayload.turn_index, qc, pollAbortRef.current.signal, pollTimeoutRef);
+        }
+
         return donePayload;
       } catch (err) {
         const error =
@@ -259,6 +361,7 @@ export function useStreamMessage() {
     sendMessage,
     isPending: isSending,
     streamState,
+    cancelPendingPoll,
     resetStreamUi: () =>
       setStreamState({
         status: "idle",
