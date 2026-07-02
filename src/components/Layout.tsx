@@ -24,7 +24,7 @@ export default function Layout() {
     <div className="app-shell flex h-screen w-screen overflow-hidden text-text-main">
       <div className="app-shell-inner flex h-full min-h-0 w-full flex-1 relative">
         {/* Desktop sidebar */}
-        <aside className="hidden h-full shrink-0 border-r-2 border-border-pink bg-surface/92 shadow-soft-pink backdrop-blur-sm md:flex md:w-72 lg:w-80">
+        <aside className="hidden h-full shrink-0 border-r-2 border-border-pink bg-surface/92 shadow-soft-pink backdrop-blur-sm lg:flex lg:w-72 xl:w-80">
           <Sidebar />
         </aside>
 
@@ -32,12 +32,12 @@ export default function Layout() {
           <button
             type="button"
             aria-label="Close sidebar"
-            className="fixed inset-0 z-40 bg-overlay md:hidden animate-fade-in"
+            className="fixed inset-0 z-40 bg-overlay lg:hidden animate-fade-in"
             onClick={() => setSidebarOpen(false)}
           />
         )}
         <aside
-          className={`sidebar-drawer fixed inset-y-0 left-0 z-50 h-full transform border-r-2 border-border-pink bg-surface/95 shadow-soft-pink backdrop-blur-sm transition-transform duration-200 ease-out md:hidden ${
+          className={`sidebar-drawer fixed inset-y-0 left-0 z-50 h-full transform border-r-2 border-border-pink bg-surface/95 shadow-soft-pink backdrop-blur-sm transition-transform duration-200 ease-out lg:hidden ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
           aria-hidden={!sidebarOpen}
@@ -46,7 +46,7 @@ export default function Layout() {
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-3 border-b-2 border-border-soft bg-surface/88 px-4 py-3 backdrop-blur-sm md:hidden">
+          <header className="flex items-center gap-3 border-b-2 border-border-soft bg-surface/88 px-4 py-3 backdrop-blur-sm lg:hidden">
             <button
               type="button"
               onClick={() => setSidebarOpen((v) => !v)}

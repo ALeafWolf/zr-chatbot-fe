@@ -23,7 +23,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-primary-light hover:bg-white/10 md:hidden"
+            className="rounded-xl p-2 text-primary-light hover:bg-white/10 lg:hidden"
             aria-label="Close sidebar"
           >
             <X size={18} />

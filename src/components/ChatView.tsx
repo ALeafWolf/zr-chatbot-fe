@@ -193,8 +193,8 @@ export default function ChatView({ sessionId }: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="section-card mx-3 mt-3 overflow-hidden sm:mx-6 sm:mt-4">
-        <div className="section-card__header flex flex-wrap items-center justify-between gap-4 px-4 sm:px-6">
-          <div className="min-w-0 flex-1">
+        <div className="section-card__header flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 sm:px-6">
+          <div className="min-w-0 flex-[1_1_60%]">
             <EditableSessionTitle
               sessionId={session.session_id}
               characterId={session.character_id}
@@ -221,7 +221,7 @@ export default function ChatView({ sessionId }: Props) {
               )}
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-3 sm:flex-row sm:items-center sm:gap-4 text-xs text-primary-light/90">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-primary-light/90">
             <div className="flex items-center gap-2">
               <input
                 id={`thinking-${session.session_id}`}
