@@ -11,3 +11,6 @@ dist-ssr
 *.log
 
 .DS_Store
+
+# Deployment runbook — contains infra recon (droplet IP, deploy user, hostnames); keep local
+docs/droplet-deployment.md
