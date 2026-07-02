@@ -1,0 +1,35 @@
+name: Deploy zr-chatbot-fe
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+# Never let two deploys touch the box at once; a newer push cancels an in-flight one.
+concurrency:
+  group: deploy-zr-chatbot-fe
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH in, pull, build, restart
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 15m # npm ci + vite build on the 2 GB box can be slow
+          script: |
+            set -e                          # fail the job if ANY step errors
+            export NVM_DIR="$HOME/.nvm"
+            . "$NVM_DIR/nvm.sh"             # nvm is NOT auto-loaded over SSH
+            nvm use 20                      # Vite 7 needs Node 20 (box default is 16)
+            cd ~/projects/zr-chatbot/frontend
+            git fetch origin
+            git reset --hard origin/master  # exact match; .env.local, dist/, node_modules are gitignored
+            npm ci                          # lockfile is committed
+            npm run build                   # tsc -b && vite build; bakes in VITE_* from .env.local
+            pm2 restart zr-chatbot-fe       # re-serve the fresh dist/
+            pm2 save

@@ -1,5 +1,7 @@
 # zr-chatbot-fe
 
+[![Deploy zr-chatbot-fe](https://github.com/ALeafWolf/zr-chatbot-fe/actions/workflows/deploy.yml/badge.svg)](https://github.com/ALeafWolf/zr-chatbot-fe/actions/workflows/deploy.yml)
+
 React SPA for frontend of zr chatbot. Provides the full conversational UI: session management, streaming chat with thought-chain visualization, and an optional password gate for access control.
 
 ## Tech Stack
